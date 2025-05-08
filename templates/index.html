@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Ascent Alert{% endblock %}
+{% block content %}
+    <h1>Safeguarding Steep Journeys</h1>
+    <p class="intro-text">Explore some of the most challenging ghat roads in India and use our Safety Predictor to assess accident risks.</p>
+    <h2>Featured Ghat Roads</h2>
+    <div class="road-grid">
+        {% for road in ghat_roads %}
+            <a href="https://www.google.com/search?q={{ road.Location }}" target="_blank" class="road-card-link">
+                <div class="road-card">
+                    <img src="{{ url_for('static', filename='images/' + road.Image) }}" alt="{{ road.Location }}">
+                    <h3>{{ road.Location }}</h3>
+                    <p><strong>Latitude:</strong> {{ road.Latitude }}</p>
+                    <p><strong>Longitude:</strong> {{ road.Longitude }}</p>
+                    <p>{{ road.Description }}</p>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% endblock %}

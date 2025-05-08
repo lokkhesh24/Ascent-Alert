@@ -5,16 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ascent Alert</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% if request.endpoint == 'dashboard' %}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    {% endif %}
 </head>
 <body>
     <nav class="navbar">
         <div class="nav-brand">
             <a href="{{ url_for('index') }}" class="btn btn-main">Ascent Alert</a>
         </div>
-        {% if request.endpoint != 'login' %}
+        {% if request.endpoint != 'login' and request.endpoint != 'loading' %}
             <ul class="nav-links">
                 <li><a href="{{ url_for('index') }}" class="btn btn-home">Home</a></li>
                 <li><a href="{{ url_for('predictor') }}" class="btn btn-predictor">Safety Predictor</a></li>
+                <li><a href="{{ url_for('dashboard') }}" class="btn btn-dashboard">Dashboard</a></li>
                 {% if logged_in %}
                     <li><a href="{{ url_for('logout') }}" class="btn btn-logout">Logout</a></li>
                 {% else %}

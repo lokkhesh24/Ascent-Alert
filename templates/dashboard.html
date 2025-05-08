@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="dashboard-container">
+    <h2>Accident Analysis Dashboard</h2>
+    <div class="chart">
+        <h3>Casualties by Ghat Road</h3>
+        <canvas id="casualtiesLocationChart" class="small-chart" width="800" height="400"></canvas>
+    </div>
+    <div class="chart">
+        <h3>Accidents by Time of Day</h3>
+        <canvas id="timeChart" class="small-chart" width="800" height="400"></canvas>
+    </div>
+    <div class="chart">
+        <h3>Cause vs Road Condition vs Ghat Road (Multiple Bar)</h3>
+        <canvas id="causeRoadLocationChart" class="small-chart" width="800" height="400"></canvas>
+    </div>
+    <div class="chart">
+        <h3>Road Condition vs Weather vs Ghat Road (Multiple Bar)</h3>
+        <canvas id="roadWeatherLocationChart" class="small-chart" width="800" height="400"></canvas>
+    </div>
+    <div class="pdf-button-container">
+        <button onclick="exportPDF()" class="button dark-red">Export to PDF</button>
+    </div>
+</div>
+<script>
+// Bar Graph: Casualties by Ghat Road
+const casualtiesLocationCtx = document.getElementById('casualtiesLocationChart').getContext('2d');
+new Chart(casualtiesLocationCtx, {
+    type: 'bar',
+    data: {
+        labels: Object.keys({{ casualties_by_location | tojson }}),
+        datasets: [{
+            label: 'Casualties',
+            data: Object.values({{ casualties_by_location | tojson }}),
+            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FFC107', '#9C27B0', '#FF9800', '#673AB7', '#FF5722', '#607D8B', '#E91E63']
+        }]
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Number of Casualties'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Ghat Road'
+                }
+            }
+        }
+    }
+});
+
+// Pie Chart: Accidents by Time of Day
+const timeCtx = document.getElementById('timeChart').getContext('2d');
+new Chart(timeCtx, {
+    type: 'pie',
+    data: {
+        labels: Object.keys({{ time_accidents | tojson }}),
+        datasets: [{
+            data: Object.values({{ time_accidents | tojson }}),
+            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FFC107']
+        }]
+    }
+});
+
+// Multiple Bar Graph: Cause vs Road Condition vs Ghat Road
+const causeRoadLocationCtx = document.getElementById('causeRoadLocationChart').getContext('2d');
+const causeRoadLocationData = {{ cause_road_location | tojson }};
+const causes = {{ causes | tojson }};
+const roadConditions = {{ road_conditions | tojson }};
+const shortLocations = {{ short_locations | tojson }};
+const datasetsCauseRoadLocation = [];
+roadConditions.forEach((condition, index) => {
+    causes.forEach((cause, causeIndex) => {
+        datasetsCauseRoadLocation.push({
+            label: `${cause} (${condition})`,
+            data: shortLocations.map(location => {
+                const entry = causeRoadLocationData.find(item => item.Cause === cause && item['Road Condition'] === condition && item.Short_Location === location);
+                return entry ? entry.Accident_Count : 0;
+            }),
+            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FFC107', '#9C27B0'][index % 5],
+            borderColor: ['#388E3C', '#D32F2F', '#1976D2', '#FF9800', '#7B1FA2'][index % 5],
+            borderWidth: 1
+        });
+    });
+});
+new Chart(causeRoadLocationCtx, {
+    type: 'bar',
+    data: {
+        labels: shortLocations,
+        datasets: datasetsCauseRoadLocation
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Number of Accidents'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Ghat Road'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        }
+    }
+});
+
+// Multiple Bar Chart: Road Condition vs Weather vs Ghat Road
+const roadWeatherLocationCtx = document.getElementById('roadWeatherLocationChart').getContext('2d');
+const roadWeatherLocationData = {{ road_weather_location | tojson }};
+const weatherConditions = [...new Set(roadWeatherLocationData.map(item => item['Weather Condition']))].sort();
+const datasetsRoadWeatherLocation = [];
+roadConditions.forEach((condition, index) => {
+    weatherConditions.forEach((weather, weatherIndex) => {
+        datasetsRoadWeatherLocation.push({
+            label: `${condition} (${weather})`,
+            data: shortLocations.map(location => {
+                const entry = roadWeatherLocationData.find(item => item['Road Condition'] === condition && item['Weather Condition'] === weather && item.Short_Location === location);
+                return entry ? entry.Accident_Count : 0;
+            }),
+            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FF9800'][index % 4],
+            borderColor: ['#388E3C', '#D32F2F', '#1976D2', '#F57C00'][index % 4],
+            borderWidth: 1
+        });
+    });
+});
+new Chart(roadWeatherLocationCtx, {
+    type: 'bar',
+    data: {
+        labels: shortLocations,
+        datasets: datasetsRoadWeatherLocation
+    },
+    options: {
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Number of Accidents'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Ghat Road'
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        }
+    }
+});
+
+// PDF Export with html2canvas (Adjusted for Larger Charts)
+async function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true
+    });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(163, 0, 0);
+    doc.text("Ascent Alert Dashboard", 10, 10);
+
+    let yPos = 20;
+    const charts = ['casualtiesLocationChart', 'timeChart', 'causeRoadLocationChart', 'roadWeatherLocationChart'];
+    for (const chartId of charts) {
+        const canvas = document.getElementById(chartId);
+        const img = await html2canvas(canvas, { scale: 2 });
+        const imgData = img.toDataURL('image/png', 1.0);
+        // Adjust image size to fit A4 page (210mm width), maintaining aspect ratio
+        const imgWidth = 190; // Width in mm (slightly less than A4 width to account for margins)
+        const imgHeight = (imgWidth * canvas.height) / canvas.width; // Maintain aspect ratio
+        doc.addImage(imgData, 'PNG', 10, yPos, imgWidth, imgHeight);
+        yPos += imgHeight + 10;
+        if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+        }
+    }
+
+    doc.save('dashboard.pdf');
+}
+</script>
+{% endblock %}

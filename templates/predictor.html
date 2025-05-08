@@ -12,7 +12,7 @@
             <label for="location">Location</label>
             <select id="location" name="location" required>
                 {% for loc in locations %}
-                    <option value="{{ loc }}">{{ loc }}</option>
+                    <option value="{{ loc }}">{{ locations_shortened[loc] }}</option>
                 {% endfor %}
             </select>
         </div>

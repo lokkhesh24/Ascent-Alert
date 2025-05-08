@@ -1,14 +1,41 @@
 from flask import Flask, request, render_template, redirect, url_for, session, flash
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 import joblib
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import json
-import os
 import random
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key'  # Replace with a secure key in production
+
+# Configure SQLite database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Define User model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+# Create database tables
+with app.app_context():
+    db.create_all()
+    # Add default admin user if not exists
+    if not User.query.filter_by(username='admin').first():
+        admin = User(username='admin')
+        admin.set_password('password123')
+        db.session.add(admin)
+        db.session.commit()
 
 # Load the model and encoders
 try:
@@ -21,12 +48,21 @@ except FileNotFoundError:
     print("Error: Model or encoder files not found.")
     exit(1)
 
-# Load dataset for homepage and dynamic slope/radius calculation
+# Load dataset for homepage, dashboard, and dynamic slope/radius calculation
 try:
     data = pd.read_csv('ghat_road_traffic_Indian_accidents.csv')
 except FileNotFoundError:
     print("Error: Dataset file 'ghat_road_traffic_Indian_accidents.csv' not found.")
     exit(1)
+
+# Function to shorten location names to the first word
+def shorten_location_name(location):
+    return location.split()[0].capitalize()
+
+# Create a mapping of full location names to shortened names
+location_mapping = {loc: shorten_location_name(loc) for loc in data['Location'].unique()}
+# Apply the mapping to the dataset
+data['Short_Location'] = data['Location'].map(location_mapping)
 
 # Get unique ghat roads (top 10 locations) with coordinates
 ghat_roads = data[['Location', 'Latitude', 'Longitude']].drop_duplicates().head(10).to_dict('records')
@@ -45,18 +81,11 @@ descriptions = [
 for i, road in enumerate(ghat_roads):
     road['Description'] = descriptions[i]
     road['Image'] = f'road{i+1}.jpg'
-
-# Load users from JSON file
-os.makedirs('data', exist_ok=True)
-users_file = 'data/users.json'
-if not os.path.exists(users_file):
-    with open(users_file, 'w') as f:
-        json.dump({'admin': 'password123'}, f)
-with open(users_file, 'r') as f:
-    users = json.load(f)
+    road['Short_Location'] = shorten_location_name(road['Location'])
 
 # Define possible values for dropdowns
 locations = le_location.classes_
+locations_shortened = {loc: shorten_location_name(loc) for loc in locations}
 weather_conditions = le_weather.classes_
 road_conditions = le_road.classes_
 
@@ -83,6 +112,10 @@ def calculate_dynamic_slope_radius(latitude, longitude):
     return max(5, min(slope, 20)), max(20, min(radius, 100))  # Constrain within realistic ranges
 
 @app.route('/')
+def loading():
+    return render_template('loading.html')
+
+@app.route('/index')
 def index():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
@@ -93,7 +126,8 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        if username in users and users[username] == password:
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
             session['logged_in'] = True
             session['username'] = username
             flash('Login successful!', 'success')
@@ -101,6 +135,31 @@ def login():
         else:
             flash('Invalid credentials. Please try again.', 'error')
     return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        # Basic validation
+        if len(username) < 3:
+            flash('Username must be at least 3 characters long.', 'error')
+            return render_template('register.html')
+        if len(password) < 6:
+            flash('Password must be at least 6 characters long.', 'error')
+            return render_template('register.html')
+        # Check if username already exists
+        if User.query.filter_by(username=username).first():
+            flash('Username already exists. Please choose a different one.', 'error')
+            return render_template('register.html')
+        # Create new user
+        new_user = User(username=username)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Registration successful! Please log in.', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html')
 
 @app.route('/logout')
 def logout():
@@ -115,6 +174,7 @@ def predictor():
         return redirect(url_for('login'))
     return render_template('predictor.html',
                          locations=locations,
+                         locations_shortened=locations_shortened,
                          weather_conditions=weather_conditions,
                          road_conditions=road_conditions,
                          logged_in=session.get('logged_in', False))
@@ -158,6 +218,43 @@ def predict():
         return render_template('result.html', prediction=result, slope=slope, radius=radius, logged_in=session.get('logged_in', False))
     except Exception as e:
         return render_template('result.html', prediction=f"Error: {str(e)}", logged_in=session.get('logged_in', False))
+
+@app.route('/dashboard')
+def dashboard():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    # Process data for charts
+    # 1. Casualties by Ghat Road Name (using shortened names)
+    casualties_by_location = data.groupby('Short_Location')['Casualties'].sum().to_dict()
+
+    # 2. Accidents by Time of Day (unchanged)
+    data['Hour'] = data['Time'].apply(convert_time)
+    time_bins = pd.cut(data['Hour'], bins=[0, 6, 12, 18, 24], labels=['Night', 'Morning', 'Afternoon', 'Evening'], right=False)
+    time_accidents = time_bins.value_counts().to_dict()
+
+    # 3. Cause vs Road Condition vs Ghat Road Name (using shortened names)
+    # Simulate 'Cause' column if not present
+    if 'Cause' not in data.columns:
+        causes = ['Speeding', 'Overtaking', 'Weather', 'Mechanical Failure', 'Driver Error']
+        data['Cause'] = np.random.choice(causes, size=len(data))
+    cause_road_location = data.groupby(['Cause', 'Road Condition', 'Short_Location']).size().reset_index(name='Accident_Count').to_dict('records')
+    causes = sorted(data['Cause'].unique())
+    road_conditions = sorted(data['Road Condition'].unique())
+    short_locations = sorted(data['Short_Location'].unique())
+
+    # 4. Road Condition vs Weather vs Ghat Road (using shortened names)
+    road_weather_location = data.groupby(['Road Condition', 'Weather Condition', 'Short_Location']).size().reset_index(name='Accident_Count').to_dict('records')
+
+    return render_template('dashboard.html',
+                         casualties_by_location=casualties_by_location,
+                         time_accidents=time_accidents,
+                         cause_road_location=cause_road_location,
+                         causes=causes,
+                         road_conditions=road_conditions,
+                         short_locations=short_locations,
+                         road_weather_location=road_weather_location,
+                         logged_in=session.get('logged_in', False))
 
 if __name__ == '__main__':
     app.run(debug=True)

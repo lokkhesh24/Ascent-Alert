@@ -67,6 +67,7 @@ body {
 
 .nav-links .btn-home { background: linear-gradient(to right, #00c6ff, #d0aaff); }
 .nav-links .btn-predictor { background: linear-gradient(to right, #ff8c42, #ff6b6b); }
+.nav-links .btn-dashboard { background: linear-gradient(to right, #4CAF50, #8BC34A); }
 .nav-links .btn-logout { background: linear-gradient(to right, #ff6b6b, #d0aaff); }
 .nav-links .btn-login-nav { background: linear-gradient(to right, #00c6ff, #ff8c42); }
 
@@ -333,18 +334,22 @@ h3 {
 .btn-main { background: linear-gradient(to right, #00c6ff, #d0aaff); }
 .btn-home { background: linear-gradient(to right, #00c6ff, #d0aaff); }
 .btn-predictor { background: linear-gradient(to right, #ff8c42, #ff6b6b); }
+.btn-dashboard { background: linear-gradient(to right, #4CAF50, #8BC34A); }
 .btn-logout { background: linear-gradient(to right, #ff6b6b, #d0aaff); }
 .btn-login-nav { background: linear-gradient(to right, #00c6ff, #ff8c42); }
 .btn-predict { background: linear-gradient(to right, #007bff, #00d4ff); }
 .btn-secondary { background: linear-gradient(to right, #6c757d, #adb5bd); }
+.button.dark-red { background: linear-gradient(to right, #A30000, #FF0000); }
 
 .btn-main:hover { background: linear-gradient(to right, #00aaff, #c090ff); }
 .btn-home:hover { background: linear-gradient(to right, #00aaff, #c090ff); }
 .btn-predictor:hover { background: linear-gradient(to right, #ff7043, #ff4d4d); }
+.btn-dashboard:hover { background: linear-gradient(to right, #388E3C, #689F38); }
 .btn-logout:hover { background: linear-gradient(to right, #ff4d4d, #c090ff); }
 .btn-login-nav:hover { background: linear-gradient(to right, #00aaff, #ff7043); }
 .btn-predict:hover { background: linear-gradient(to right, #0066cc, #00b3e6); }
 .btn-secondary:hover { background: linear-gradient(to right, #5a6268, #9aa0a6); }
+.button.dark-red:hover { background: linear-gradient(to right, #7A0000, #CC0000); }
 
 .flash-success {
     background: #28a745;
@@ -370,6 +375,72 @@ h3 {
     padding: 10px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
+}
+
+.loading-body {
+    background: linear-gradient(135deg, #00c6ff, #d0aaff, #ff8c42);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Playfair Display', serif;
+    color: #fff;
+}
+
+.loading-container {
+    text-align: center;
+    border-radius: 20px;
+    padding: 40px;
+}
+
+.speedometer-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.speedometer {
+    position: relative;
+}
+
+.driving-tips {
+    margin-top: 20px;
+}
+
+.driving-tips p {
+    font-size: 18px;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin: 0;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 80px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.chart {
+    margin: 30px 0;
+    padding: 30px;
+    background: #f0f6ff;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.small-chart {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.pdf-button-container {
+    text-align: center;
+    margin-top: 30px;
 }
 
 p {

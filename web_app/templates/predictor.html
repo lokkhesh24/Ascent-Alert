@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="predictor-container gradient-bg">
+    <h2>Safety Predictor</h2>
+    {% if notification %}
+        <div class="notification">
+            <div class="alert caution">
+                <span class="alert-icon">!</span>
+                <p>{{ notification }}</p>
+            </div>
+        </div>
+    {% endif %}
+    <form method="POST" id="predictor-form" class="bento-grid">
+        <div class="bento-box">
+            <h3>Environmental Conditions</h3>
+            <select name="weather" required>
+                <option value="Clear">Clear</option>
+                <option value="Rainy">Rainy</option>
+                <option value="Foggy">Foggy</option>
+                <option value="Snowy">Snowy</option>
+                <option value="Stormy">Stormy</option>
+            </select>
+            <select name="time" required>
+                <option value="Morning">Morning</option>
+                <option value="Afternoon">Afternoon</option>
+                <option value="Evening">Evening</option>
+                <option value="Night">Night</option>
+            </select>
+        </div>
+        <div class="bento-box">
+            <h3>Road Details</h3>
+            <select name="road" required>
+                <option value="Dry">Dry</option>
+                <option value="Wet">Wet</option>
+                <option value="Icy">Icy</option>
+                <option value="Under Construction">Under Construction</option>
+            </select>
+            <select name="light" required>
+                <option value="Daylight">Daylight</option>
+                <option value="Artificial Light">Artificial Light</option>
+                <option value="No Light">No Light</option>
+            </select>
+        </div>
+        <div class="bento-box">
+            <h3>Traffic and Vehicle Details</h3>
+            <input type="number" name="traffic" placeholder="Traffic Density (0-2)" required>
+            <input type="number" name="speed" placeholder="Speed Limit (km/h)" required>
+        </div>
+        <div class="bento-box">
+            <h3>Vehicle Type</h3>
+            <select name="vehicle" required>
+                <option value="Car">Car</option>
+                <option value="Truck">Truck</option>
+                <option value="Motorcycle">Motorcycle</option>
+                <option value="Bus">Bus</option>
+            </select>
+        </div>
+        <div class="bento-box">
+            <h3>Driver Information</h3>
+            <select name="alcohol" required>
+                <option value="0">No Alcohol</option>
+                <option value="1">Alcohol</option>
+            </select>
+            <input type="number" name="age" placeholder="Driver Age" required>
+        </div>
+        <div class="bento-box">
+            <h3>Experience</h3>
+            <input type="number" name="experience" placeholder="Driver Experience (years)" required>
+        </div>
+        <div class="bento-box form-buttons">
+            <button type="submit" class="button green">Predict</button>
+            <button type="reset" class="button red">Clear</button>
+        </div>
+    </form>
+    <div id="risk-meter">
+        <canvas id="riskCanvas" width="200" height="200"></canvas>
+    </div>
+    {% if prediction %}
+        <div id="prediction">{{ prediction }}</div>
+    {% endif %}
+</div>
+{% endblock %}

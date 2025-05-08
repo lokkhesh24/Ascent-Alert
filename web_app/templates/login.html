@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="fullscreen-container">
+    <video autoplay muted loop id="bg-video">
+        <source src="{{ url_for('static', filename='f1_car.mp4') }}" type="video/mp4">
+    </video>
+    <div class="login-container">
+        <h2>Login</h2>
+        <form method="POST">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Username" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" placeholder="Password" required>
+            </div>
+            <div class="options">
+                <label>
+                    <input type="checkbox" name="remember"> Remember me
+                </label>
+                <a href="{{ url_for('forgot_password') }}" class="forget-link">Forget password?</a>
+            </div>
+            <button type="submit" class="button green">Login</button>
+            <p>Don't have an account? <a href="{{ url_for('register') }}" class="register-link">Register</a></p>
+        </form>
+        {% if error %}
+            <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kolli Ghat Road Safety</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Kolli Ghat Road Safety Predictor</h1>
+    </header>
+    <form method="POST">
+        <select name="weather" required>
+            <option value="Clear">Clear</option>
+            <option value="Rainy">Rainy</option>
+            <option value="Foggy">Foggy</option>
+            <option value="Snowy">Snowy</option>
+            <option value="Stormy">Stormy</option>
+        </select>
+        <select name="time" required>
+            <option value="Morning">Morning</option>
+            <option value="Afternoon">Afternoon</option>
+            <option value="Evening">Evening</option>
+            <option value="Night">Night</option>
+        </select>
+        <input type="number" name="traffic" placeholder="Traffic Density (0-2)" required>
+        <input type="number" name="speed" placeholder="Speed Limit (km/h)" required>
+        <select name="alcohol" required>
+            <option value="0">No Alcohol</option>
+            <option value="1">Alcohol</option>
+        </select>
+        <select name="road" required>
+            <option value="Dry">Dry</option>
+            <option value="Wet">Wet</option>
+            <option value="Icy">Icy</option>
+            <option value="Under Construction">Under Construction</option>
+        </select>
+        <select name="vehicle" required>
+            <option value="Car">Car</option>
+            <option value="Truck">Truck</option>
+            <option value="Motorcycle">Motorcycle</option>
+            <option value="Bus">Bus</option>
+        </select>
+        <input type="number" name="age" placeholder="Driver Age" required>
+        <input type="number" name="experience" placeholder="Driver Experience (years)" required>
+        <select name="light" required>
+            <option value="Daylight">Daylight</option>
+            <option value="Artificial Light">Artificial Light</option>
+            <option value="No Light">No Light</option>
+        </select>
+        <button type="submit">Check Risk</button>
+    </form>
+    {% if prediction %}
+        <div id="prediction">{{ prediction }}</div>
+    {% endif %}
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

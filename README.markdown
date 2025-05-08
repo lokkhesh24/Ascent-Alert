@@ -7,7 +7,7 @@ A Flask-based web application to explore ghat roads in India and predict acciden
 - **Login Page**: Transparent glassy login page with visible text, requiring authentication, with no top navigation displayed. Includes a link to the registration page.
 - **Register Page**: Transparent glassy registration page styled similarly to the login page, allowing new users to sign up with a username and password.
 - **Homepage**: Displays 10 unique ghat roads with flat-style buttons, centered text, and clickable Google search links using shortened location names (e.g., "Khar" for "Khardung La Pass, Ladakh"). Top right buttons are padded more to the right for visibility.
-- **Safety Predictor**: Features a Bento box grid with properly aligned dropdowns and inputs, using a gradient background, and includes an embedded Google Maps iframe for visualization. Location dropdown shows shortened names.
+- **Safety Predictor**: Features a Bento box grid with properly aligned dropdowns and inputs, using a gradient background, and includes a downloadable KML file to view ghat road locations in 3D using Google Earth. Now supports voice input for all fields using the Web Speech API (best supported in Chrome and Edge).
 - **Dashboard Page**: Visualizes dataset insights with larger charts (Casualties by Ghat Road, Accidents by Time of Day, Cause vs Road Condition vs Ghat Road, and Road Condition vs Weather vs Ghat Road) using shortened location names, and allows PDF export.
 - **Result Page**: Centered "Try Another Prediction" button with error handling, now includes dynamically calculated slope and radius based on location coordinates.
 - **Responsive Design**: Works on desktop and mobile devices.
@@ -59,10 +59,16 @@ A Flask-based web application to explore ghat roads in India and predict acciden
    - The application will start on `http://127.0.0.1:5000`.
 
 7. **Access the Web Application**
-   - Open a web browser and navigate to `http://127.0.0.1:5000`.
+   - Open a web browser (preferably Chrome or Edge for voice input support) and navigate to `http://127.0.0.1:5000`.
    - View the loading page with a speedometer animation and driving tips, which redirects to the login page.
    - Log in with username: `admin`, password: `password123`, or register a new user via the "Sign Up" link.
-   - Explore the homepage, use the Safety Predictor, or view the Dashboard page with dataset visualizations.
+   - Explore the homepage, use the Safety Predictor to input values via voice or manually, or check the Dashboard page with dataset visualizations.
+
+8. **View Ghat Roads in 3D with Google Earth**
+   - On the Safety Predictor page, download the `ghat_roads.kml` file.
+   - Open Google Earth on your device (download for free at [earth.google.com](https://earth.google.com) or use the web version).
+   - Import the `ghat_roads.kml` file into Google Earth to view the ghat road locations in 3D with terrain and buildings.
+   - No payment or signup is required to use Google Earth for this purpose.
 
 ## Adding Images for Ghat Roads
 - The homepage displays 10 ghat roads, each with an image (`road1.jpg` to `road10.jpg`) in `static/images/`.
@@ -79,11 +85,11 @@ A Flask-based web application to explore ghat roads in India and predict acciden
   - If specific images are unavailable, use generic mountain road images or a single image copied as `road1.jpg` to `road10.jpg` for testing.
 
 ## Input Fields (Safety Predictor)
-- **Time**: Enter time in the format `H:MM:SS AM/PM` (e.g., `2:03:00 AM`). Required field.
-- **Location**: Select a location from the dropdown (displays shortened names, e.g., "Khar"). Required field.
-- **Weather Condition**: Select a weather condition from the dropdown. Required field.
-- **Road Condition**: Select a road condition from the dropdown. Required field.
-- **Vehicles Involved**: Enter a number between 1 and 5. Required field.
+- **Time**: Enter time in the format `H:MM:SS AM/PM` (e.g., `2:03:00 AM`). Required field. Supports voice input (e.g., say "two thirty pm").
+- **Location**: Select a location from the dropdown (displays shortened names, e.g., "Khar"). Required field. Supports voice input (e.g., say "Khar").
+- **Weather Condition**: Select a weather condition from the dropdown. Required field. Supports voice input (e.g., say "Rainy").
+- **Road Condition**: Select a road condition from the dropdown. Required field. Supports voice input (e.g., say "Wet").
+- **Vehicles Involved**: Enter a number between 1 and 5. Required field. Supports voice input (e.g., say "three").
 
 ## Output
 - The predictor returns the accident severity:
@@ -105,6 +111,8 @@ A Flask-based web application to explore ghat roads in India and predict acciden
 - Slope and radius are now dynamically calculated using latitude and longitude, constrained within realistic ranges (5-20 degrees for slope, 20-100 meters for radius).
 - The login and registration system now uses a SQLite database with hashed passwords for improved security.
 - The loading page speedometer and tips are now displayed without a background box for a cleaner look.
+- The Safety Predictor provides a KML file to view ghat road locations in 3D using Google Earth, which is free and requires no payment or signup.
+- Voice input is supported for all fields on the Safety Predictor page using the Web Speech API. For best results, use Chrome or Edge. You may need to allow microphone permissions when prompted.
 - The dashboard page requires the dataset to have columns like `Location`, `Casualties`, `Time`, `Road Condition`, `Weather Condition`, and optionally `Cause`. If `Cause` is missing, the app simulates it for demonstration.
 - The model is trained using a variety of advanced ML models (Random Forest, XGBoost, CatBoost, SVM, and Neural Network). The best model is selected based on cross-validation accuracy.
 - Ghat road names are shortened to the first word (e.g., "Khar" for "Khardung La Pass, Ladakh") across the application for consistency.

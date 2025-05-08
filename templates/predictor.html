@@ -2,7 +2,7 @@
 {% block title %}Ascent Alert{% endblock %}
 {% block content %}
     <h1>Safety Predictor</h1>
-    <p class="intro-text">Enter the details below to predict the accident severity on a ghat road.</p>
+    <p class="intro-text">Enter the details below to predict the accident severity on a ghat road. Use the microphone buttons to input values via voice for Location, Weather, and Road Condition.</p>
     <div class="bento-grid">
         <div class="bento-box">
             <label for="time">Time</label>
@@ -10,27 +10,36 @@
         </div>
         <div class="bento-box">
             <label for="location">Location</label>
-            <select id="location" name="location" required>
-                {% for loc in locations %}
-                    <option value="{{ loc }}">{{ locations_shortened[loc] }}</option>
-                {% endfor %}
-            </select>
+            <div class="input-with-mic">
+                <select id="location" name="location" required>
+                    {% for loc in locations %}
+                        <option value="{{ loc }}">{{ locations_shortened[loc] }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="mic-btn" data-target="location"><i class="fas fa-microphone"></i></button>
+            </div>
         </div>
         <div class="bento-box">
             <label for="weather">Weather</label>
-            <select id="weather" name="weather" required>
-                {% for weather in weather_conditions %}
-                    <option value="{{ weather }}">{{ weather }}</option>
-                {% endfor %}
-            </select>
+            <div class="input-with-mic">
+                <select id="weather" name="weather" required>
+                    {% for weather in weather_conditions %}
+                        <option value="{{ weather }}">{{ weather }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="mic-btn" data-target="weather"><i class="fas fa-microphone"></i></button>
+            </div>
         </div>
         <div class="bento-box">
             <label for="road">Road Condition</label>
-            <select id="road" name="road" required>
-                {% for road in road_conditions %}
-                    <option value="{{ road }}">{{ road }}</option>
-                {% endfor %}
-            </select>
+            <div class="input-with-mic">
+                <select id="road" name="road" required>
+                    {% for road in road_conditions %}
+                        <option value="{{ road }}">{{ road }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="mic-btn" data-target="road"><i class="fas fa-microphone"></i></button>
+            </div>
         </div>
         <div class="bento-box">
             <label for="vehicles">Vehicles</label>
@@ -42,6 +51,141 @@
     </div>
     <form id="predict-form" action="{{ url_for('predict') }}" method="POST" style="display: none;"></form>
     <div class="map-container">
-        <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1AjHYWHGxTpZTYWYi3YxUnWlayupuObo&ehbc=2E312F" width="640" height="480"></iframe>
+        <h2>Ghat Roads Map</h2>
+        <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1AjHYWHGxTpZTYWYi3YxUnWlayupuObo&ehbc=2E312F" width="100%" height="480"></iframe>
+        <h2>View in 3D</h2>
+        <p>Download the KML file below and open it in Google Earth to view the ghat road locations in 3D. Google Earth is free and available on desktop, mobile, or web browsers at <a href="https://earth.google.com">earth.google.com</a>.</p>
+        <a href="{{ url_for('static', filename='ghat_roads.kml') }}" download class="btn btn-predict">Download Ghat Roads KML</a>
     </div>
+
+    <!-- Include Font Awesome for microphone icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        .input-with-mic {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .mic-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .mic-btn.listening {
+            background: #ff4444;
+        }
+        .mic-btn:hover {
+            background: #45a049;
+        }
+        .mic-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .map-container iframe {
+            max-width: 100%;
+            border: none;
+            margin-bottom: 20px;
+        }
+    </style>
+    <script>
+        // Check for SpeechRecognition API support
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert("Sorry, your browser does not support the Web Speech API. Please use a supported browser like Chrome or Edge.");
+            document.querySelectorAll('.mic-btn').forEach(btn => btn.disabled = true);
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            // Get all microphone buttons (only for location, weather, road)
+            document.querySelectorAll('.mic-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+                    const targetInput = document.getElementById(targetId);
+
+                    // Toggle listening state
+                    if (button.classList.contains('listening')) {
+                        recognition.stop();
+                        return;
+                    }
+
+                    button.classList.add('listening');
+                    recognition.start();
+
+                    recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript.trim().toLowerCase();
+                        console.log(`Recognized: ${transcript}`);
+
+                        // Handle dropdowns (location, weather, road)
+                        const options = Array.from(targetInput.options).map(opt => ({
+                            text: opt.text.toLowerCase(),
+                            value: opt.value
+                        }));
+
+                        // Find the closest matching option
+                        let bestMatch = null;
+                        let highestScore = 0;
+                        options.forEach(option => {
+                            const score = similarity(transcript, option.text);
+                            if (score > highestScore) {
+                                highestScore = score;
+                                bestMatch = option;
+                            }
+                        });
+
+                        if (bestMatch && highestScore > 0.5) {
+                            targetInput.value = bestMatch.value;
+                        } else {
+                            alert(`Could not match "${transcript}" to any option in ${targetId}. Please try again.`);
+                        }
+                    };
+
+                    recognition.onend = () => {
+                        button.classList.remove('listening');
+                    };
+
+                    recognition.onerror = (event) => {
+                        console.error('Speech recognition error:', event.error);
+                        button.classList.remove('listening');
+                        if (event.error === 'no-speech') {
+                            alert('No speech detected. Please try again.');
+                        } else if (event.error === 'not-allowed') {
+                            alert('Microphone access denied. Please allow microphone permissions.');
+                        } else {
+                            alert('An error occurred during speech recognition: ' + event.error);
+                        }
+                    };
+                });
+            });
+
+            // Simple string similarity function (Levenshtein distance approximation)
+            function similarity(s1, s2) {
+                s1 = s1.toLowerCase();
+                s2 = s2.toLowerCase();
+                if (s1 === s2) return 1.0;
+                if (s1.length < s2.length) [s1, s2] = [s2, s1];
+                if (s2.length === 0) return 0.0;
+
+                const previousRow = Array(s2.length + 1).fill(0).map((_, i) => i);
+                for (let i = 0; i < s1.length; i++) {
+                    const currentRow = [i + 1];
+                    for (let j = 0; j < s2.length; j++) {
+                        const insertions = previousRow[j + 1] + 1;
+                        const deletions = currentRow[j] + 1;
+                        const substitutions = previousRow[j] + (s1[i] !== s2[j] ? 1 : 0);
+                        currentRow.push(Math.min(insertions, deletions, substitutions));
+                    }
+                    previousRow.splice(0, previousRow.length, ...currentRow);
+                }
+                const distance = previousRow[s2.length];
+                return 1.0 - distance / Math.max(s1.length, s2.length);
+            }
+        }
+    </script>
 {% endblock %}

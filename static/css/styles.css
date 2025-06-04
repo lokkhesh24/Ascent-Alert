@@ -10,11 +10,19 @@ body {
     color: #333;
     min-height: 100vh;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: auto;
+    flex-direction: column;
     background: linear-gradient(135deg, #00c6ff, #d0aaff, #ff8c42);
     transition: background 5s ease-in-out;
+}
+
+.container {
+    flex: 1 0 auto;
+    max-width: 1200px;
+    margin: 80px auto 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 .navbar {
@@ -68,6 +76,7 @@ body {
 .nav-links .btn-home { background: linear-gradient(to right, #00c6ff, #d0aaff); }
 .nav-links .btn-predictor { background: linear-gradient(to right, #ff8c42, #ff6b6b); }
 .nav-links .btn-dashboard { background: linear-gradient(to right, #4CAF50, #8BC34A); }
+.nav-links .btn-about { background: linear-gradient(to right, #ff6b6b, #00c6ff); }
 .nav-links .btn-logout { background: linear-gradient(to right, #ff6b6b, #d0aaff); }
 .nav-links .btn-login-nav { background: linear-gradient(to right, #00c6ff, #ff8c42); }
 
@@ -77,15 +86,6 @@ body {
 
 .nav-brand {
     margin-left: 10px; /* Reduced to give more space to the right */
-}
-
-.container {
-    max-width: 1200px;
-    margin: 80px auto 30px;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 }
 
 h1 {
@@ -335,6 +335,7 @@ h3 {
 .btn-home { background: linear-gradient(to right, #00c6ff, #d0aaff); }
 .btn-predictor { background: linear-gradient(to right, #ff8c42, #ff6b6b); }
 .btn-dashboard { background: linear-gradient(to right, #4CAF50, #8BC34A); }
+.btn-about { background: linear-gradient(to right, #ff6b6b, #00c6ff); }
 .btn-logout { background: linear-gradient(to right, #ff6b6b, #d0aaff); }
 .btn-login-nav { background: linear-gradient(to right, #00c6ff, #ff8c42); }
 .btn-predict { background: linear-gradient(to right, #007bff, #00d4ff); }
@@ -345,6 +346,7 @@ h3 {
 .btn-home:hover { background: linear-gradient(to right, #00aaff, #c090ff); }
 .btn-predictor:hover { background: linear-gradient(to right, #ff7043, #ff4d4d); }
 .btn-dashboard:hover { background: linear-gradient(to right, #388E3C, #689F38); }
+.btn-about:hover { background: linear-gradient(to right, #ff4d4d, #00aaff); }
 .btn-logout:hover { background: linear-gradient(to right, #ff4d4d, #c090ff); }
 .btn-login-nav:hover { background: linear-gradient(to right, #00aaff, #ff7043); }
 .btn-predict:hover { background: linear-gradient(to right, #0066cc, #00b3e6); }

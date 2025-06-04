@@ -1,0 +1,318 @@
+{% extends "base.html" %}
+{% block title %}About Us - Ascent Alert{% endblock %}
+{% block content %}
+    <div class="parallax-section">
+        <div class="overlay">
+            <h1 class="fade-in">About Us</h1>
+            <p class="fade-in">Meet the team behind Ascent Alert, a project dedicated to enhancing road safety on ghat roads through data-driven predictions.</p>
+        </div>
+    </div>
+
+    <!-- Team Carousel -->
+    <section class="team-section">
+        <h2 class="fade-in">Our Team</h2>
+        <div id="teamCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+            <!-- Thumbnails -->
+            <div class="carousel-thumbnails">
+                <button class="thumbnail active" data-bs-target="#teamCarousel" data-bs-slide-to="0">
+                    <img src="{{ url_for('static', filename='images/team/member1.jpg') }}" alt="Member 1" loading="lazy">
+                </button>
+                <button class="thumbnail" data-bs-target="#teamCarousel" data-bs-slide-to="1">
+                    <img src="{{ url_for('static', filename='images/team/member2.jpg') }}" alt="Member 2" loading="lazy">
+                </button>
+                <button class="thumbnail" data-bs-target="#teamCarousel" data-bs-slide-to="2">
+                    <img src="{{ url_for('static', filename='images/team/member3.jpg') }}" alt="Member 3" loading="lazy">
+                </button>
+            </div>
+            <!-- Carousel Items -->
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <div class="team-member fade-in">
+                        <img src="{{ url_for('static', filename='images/team/member1.jpg') }}" alt="Member 1" loading="lazy">
+                        <h3>Lokkhesh Annamalai</h3>
+                        <p>Data Scientist</p>
+                        <a href="https://www.linkedin.com/in/lokkhesh-annamalai-sk-498847253/" target="_blank" class="btn btn-primary">LinkedIn Profile</a>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="team-member fade-in">
+                        <img src="{{ url_for('static', filename='images/team/member2.jpg') }}" alt="Member 2" loading="lazy">
+                        <h3>Manish</h3>
+                        <p>Web Developer</p>
+                        <a href="https://www.linkedin.com/in/manish-m-3a62ab259/" target="_blank" class="btn btn-primary">LinkedIn Profile</a>
+                    </div>
+                </div>
+                <div class="carousel-item">
+                    <div class="team-member fade-in">
+                        <img src="{{ url_for('static', filename='images/team/member3.jpg') }}" alt="Member 3" loading="lazy">
+                        <h3>Naraen</h3>
+                        <p>UX Designer</p>
+                        <a href="https://www.linkedin.com/in/naraenbalaji/" target="_blank" class="btn btn-primary">LinkedIn Profile</a>
+                    </div>
+                </div>
+            </div>
+            <!-- Controls -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#teamCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#teamCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Next</span>
+            </button>
+        </div>
+    </section>
+
+    <!-- Tabbed Content -->
+    <section class="tabs-section fade-in">
+        <h2>Learn More About Us</h2>
+        <ul class="nav nav-tabs" id="teamTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="alex-tab" data-bs-toggle="tab" href="#alex" role="tab">Lokkhesh</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="jamie-tab" data-bs-toggle="tab" href="#jamie" role="tab">Manish</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="casey-tab" data-bs-toggle="tab" href="#casey" role="tab">Naraen</a>
+            </li>
+        </ul>
+        <div class="tab-content" id="teamTabsContent">
+            <div class="tab-pane fade show active" id="alex" role="tabpanel">
+                <h3>Lokkhesh Annamalai - Data Scientist</h3>
+                <p>I am passionate about leveraging data to solve real-world problems. With a background in machine learning, Alex developed the predictive model for Ascent Alert, ensuring accurate accident severity predictions.</p>
+            </div>
+            <div class="tab-pane fade" id="jamie" role="tabpanel">
+                <h3>Manish - Web Developer</h3>
+                <p>I built the Ascent Alert website, focusing on a seamless user experience. With expertise in Flask and front-end technologies, Jamie ensures the app is both functional and visually appealing.</p>
+            </div>
+            <div class="tab-pane fade" id="casey" role="tabpanel">
+                <h3>Naraen - UX Designer</h3>
+                <p>I designed the user interface, making Ascent Alert intuitive and accessible. With a keen eye for detail, Casey incorporated features like voice input and interactive maps to enhance usability.</p>
+            </div>
+        </div>
+    </section>
+</div> <!-- Close the container div from base.html -->
+
+    <!-- Footer (only for About Us page) -->
+    <footer class="site-footer fade-in">
+        <div class="footer-content">
+            <div class="social-media">
+                <h4>Follow Us</h4>
+                <a href="https://x.com/lokkhesh07?t=OOfZfFUHQnCmrkuUTIWiHw&s=09" target="_blank"><img src="{{ url_for('static', filename='images/social/x.png') }}" alt="X" class="social-icon"></a>
+                <a href="https://www.instagram.com/l0ki_24/" target="_blank"><img src="{{ url_for('static', filename='images/social/instagram.png') }}" alt="Instagram" class="social-icon"></a>
+                <a href="https://www.facebook.com/profile.php?id=100007743256411" target="_blank"><img src="{{ url_for('static', filename='images/social/facebook.png') }}" alt="Facebook" class="social-icon"></a>
+                <a href="https://github.com/lokkhesh24" target="_blank"><img src="{{ url_for('static', filename='images/social/github.png') }}" alt="GitHub" class="social-icon"></a>
+            </div>
+        </div>
+        <p>© 2025 Ascent Alert. All rights reserved.</p>
+    </footer>
+
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Include Bootstrap for carousel and tabs -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        /* Ensure the body and container allow the footer to stick to the bottom */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        .container {
+            flex: 1 0 auto;
+            margin-bottom: 0; /* Remove bottom margin to prevent gap */
+        }
+        .site-footer {
+            flex-shrink: 0;
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            width: 100%;
+        }
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .social-media h4 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+        .social-icon {
+            width: 30px;
+            height: 30px;
+            margin: 0 10px;
+            transition: transform 0.3s;
+        }
+        .social-icon:hover {
+            transform: scale(1.2);
+        }
+        .site-footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Parallax Section */
+        .parallax-section {
+            background-image: url('{{ url_for("static", filename="images/team/mountain_road.jpg") }}');
+            background-attachment: fixed;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+            position: relative;
+        }
+        .overlay {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .parallax-section h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        .parallax-section p {
+            font-size: 1.1rem;
+        }
+
+        /* Team Section */
+        .team-section {
+            padding: 40px 0;
+            text-align: center;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        }
+        .carousel-thumbnails {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .thumbnail {
+            width: 50px;
+            height: 50px;
+            border: none;
+            padding: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        .thumbnail.active, .thumbnail:hover {
+            opacity: 1;
+        }
+        .thumbnail img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .team-member img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
+        .team-member h3 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+        .team-member p {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background: linear-gradient(to right, #007bff, #00d4ff);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            transition: background 0.3s;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(to right, #0066cc, #00b3e6);
+        }
+
+        /* Tabs Section */
+        .tabs-section {
+            padding: 40px 0;
+            text-align: center;
+        }
+        .nav-tabs {
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .nav-tabs .nav-link {
+            font-size: 1.1rem;
+            padding: 8px 15px;
+            color: #007bff;
+        }
+        .nav-tabs .nav-link.active {
+            background: #f0f6ff;
+            border-color: #007bff;
+            color: #0056b3;
+        }
+        .tab-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .tab-pane {
+            padding: 15px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Fade Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+    <script>
+        // Remove the XLSX-related script as it's not needed for this page
+        // Fade-in animation on scroll
+        function handleFadeIn() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top < window.innerHeight - 100) {
+                    el.classList.add('visible');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', handleFadeIn);
+        window.addEventListener('load', handleFadeIn);
+
+        // Lazy loading observer for carousel images
+        document.addEventListener('DOMContentLoaded', function() {
+            const lazyImages = document.querySelectorAll('img[loading="lazy"]');
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.src; // Trigger loading
+                        observer.unobserve(img);
+                    }
+                });
+            });
+            lazyImages.forEach(img => observer.observe(img));
+        });
+    </script>
+{% endblock %}

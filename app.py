@@ -256,5 +256,11 @@ def dashboard():
                          road_weather_location=road_weather_location,
                          logged_in=session.get('logged_in', False))
 
+@app.route('/about')
+def about():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return render_template('about.html', logged_in=session.get('logged_in', False))
+
 if __name__ == '__main__':
     app.run(debug=True)

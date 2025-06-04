@@ -57,6 +57,21 @@
         <p>Download the KML file below and open it in Google Earth to view the ghat road locations in 3D. Google Earth is free and available on desktop, mobile, or web browsers at <a href="https://earth.google.com">earth.google.com</a>.</p>
         <a href="{{ url_for('static', filename='ghat_roads.kml') }}" download class="btn btn-predict">Download Ghat Roads KML</a>
     </div>
+    <div class="chat-container">
+        <h2>Ask a Question</h2>
+        <p>Use the chat below to ask questions about ghat roads, safety, or the predictor tool. You can also use the voice button to speak your question.</p>
+        <div class="chat-input">
+            <div class="input-with-mic">
+                <input type="text" id="chat-input" placeholder="Type or speak your question (e.g., 'What is Khardung La?')" required>
+                <button type="button" class="mic-btn" data-target="chat-input"><i class="fas fa-microphone"></i></button>
+            </div>
+            <button type="button" id="chat-send" class="btn btn-predict">Send</button>
+        </div>
+        <div class="chat-response">
+            <h3>Answer:</h3>
+            <div id="chat-output" class="chat-output-box">Your answer will appear here.</div>
+        </div>
+    </div>
 
     <!-- Include Font Awesome for microphone icon -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -90,6 +105,38 @@
             border: none;
             margin-bottom: 20px;
         }
+        .chat-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            border-radius: 10px;
+        }
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #chat-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        #chat-send {
+            padding: 10px 20px;
+        }
+        .chat-response {
+            margin-top: 20px;
+        }
+        .chat-output-box {
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            min-height: 100px;
+            font-size: 16px;
+        }
     </style>
     <script>
         // Check for SpeechRecognition API support
@@ -103,7 +150,17 @@
             recognition.interimResults = false;
             recognition.lang = 'en-US';
 
-            // Get all microphone buttons (only for location, weather, road)
+            // Predefined questions and answers for AI simulation
+            const qaDatabase = {
+                "what is khardung la": "Khardung La Pass, located in Ladakh, India, is one of the highest motorable passes in the world at an elevation of 5,359 meters (17,582 feet). It’s a popular route for travelers heading to Nubra Valley.",
+                "what are ghat roads": "Ghat roads are mountain passes or roads in India, often found in the Western Ghats or Himalayan regions. They are known for their steep inclines, sharp bends, and scenic views, but can be dangerous due to weather and road conditions.",
+                "how to drive safely on ghat roads": "To drive safely on ghat roads, maintain a low speed, use low gears on steep slopes, honk at blind curves, avoid overtaking on sharp bends, and ensure your vehicle is in good condition (brakes, tires, etc.).",
+                "what affects accident severity": "Accident severity on ghat roads is affected by factors like time of day, weather conditions (e.g., rain, fog), road conditions (e.g., wet, damaged), the number of vehicles involved, and driver behavior.",
+                "how does the predictor work": "The Safety Predictor uses a machine learning model trained on historical accident data. It takes inputs like Time, Location, Weather Condition, Road Condition, and Vehicles Involved to predict the accident severity (Low, Medium, High).",
+                "what is the best time to travel on ghat roads": "The best time to travel on ghat roads is during daylight hours, preferably in the morning, when visibility is high and traffic is lower. Avoid traveling at night or during heavy rain or fog."
+            };
+
+            // Handle all microphone buttons (for dropdowns and chat input)
             document.querySelectorAll('.mic-btn').forEach(button => {
                 button.addEventListener('click', () => {
                     const targetId = button.getAttribute('data-target');
@@ -122,27 +179,31 @@
                         const transcript = event.results[0][0].transcript.trim().toLowerCase();
                         console.log(`Recognized: ${transcript}`);
 
-                        // Handle dropdowns (location, weather, road)
-                        const options = Array.from(targetInput.options).map(opt => ({
-                            text: opt.text.toLowerCase(),
-                            value: opt.value
-                        }));
-
-                        // Find the closest matching option
-                        let bestMatch = null;
-                        let highestScore = 0;
-                        options.forEach(option => {
-                            const score = similarity(transcript, option.text);
-                            if (score > highestScore) {
-                                highestScore = score;
-                                bestMatch = option;
-                            }
-                        });
-
-                        if (bestMatch && highestScore > 0.5) {
-                            targetInput.value = bestMatch.value;
+                        if (targetId === 'chat-input') {
+                            targetInput.value = transcript;
                         } else {
-                            alert(`Could not match "${transcript}" to any option in ${targetId}. Please try again.`);
+                            // Handle dropdowns (location, weather, road)
+                            const options = Array.from(targetInput.options).map(opt => ({
+                                text: opt.text.toLowerCase(),
+                                value: opt.value
+                            }));
+
+                            // Find the closest matching option
+                            let bestMatch = null;
+                            let highestScore = 0;
+                            options.forEach(option => {
+                                const score = similarity(transcript, option.text);
+                                if (score > highestScore) {
+                                    highestScore = score;
+                                    bestMatch = option;
+                                }
+                            });
+
+                            if (bestMatch && highestScore > 0.5) {
+                                targetInput.value = bestMatch.value;
+                            } else {
+                                alert(`Could not match "${transcript}" to any option in ${targetId}. Please try again.`);
+                            }
                         }
                     };
 
@@ -162,6 +223,45 @@
                         }
                     };
                 });
+            });
+
+            // Handle chat submission
+            document.getElementById('chat-send').addEventListener('click', () => {
+                const questionInput = document.getElementById('chat-input');
+                const question = questionInput.value.trim().toLowerCase();
+                const chatOutput = document.getElementById('chat-output');
+
+                if (!question) {
+                    alert('Please enter a question.');
+                    return;
+                }
+
+                // Find the closest matching question in the QA database
+                let bestMatch = null;
+                let highestScore = 0;
+                Object.keys(qaDatabase).forEach(q => {
+                    const score = similarity(question, q);
+                    if (score > highestScore) {
+                        highestScore = score;
+                        bestMatch = q;
+                    }
+                });
+
+                if (bestMatch && highestScore > 0.5) {
+                    chatOutput.textContent = qaDatabase[bestMatch];
+                } else {
+                    chatOutput.textContent = "Sorry, I couldn’t find an answer to your question. Try asking about ghat roads, safety, or the predictor tool (e.g., 'What is Khardung La?' or 'How does the predictor work?').";
+                }
+
+                // Clear the input field
+                questionInput.value = '';
+            });
+
+            // Allow pressing Enter to send the chat message
+            document.getElementById('chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('chat-send').click();
+                }
             });
 
             // Simple string similarity function (Levenshtein distance approximation)

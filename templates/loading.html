@@ -1,176 +1,100 @@
-{% extends "base.html" %}
-
-{% block title %}Loading AscentAlert{% endblock %}
-
-{% block head_extra %}
-<style>
-    /* Styles specific to loading page, ensuring they override base.html if needed */
-    .navbar, .site-footer { display: none !important; }
-    body.loading-active {
-        overflow: hidden;
-        background-color: var(--background-color); /* Use theme color */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        color: var(--text-color-primary);
-    }
-    .loading-content-wrapper { /* New wrapper for better centering and structure */
-        text-align: center;
-    }
-    .speedometer-container { /* Renamed from loading-container */
-        position: relative;
-        width: 300px; /* Adjust as needed */
-        height: 180px; /* Half of width for semi-circle + space */
-        margin: 0 auto var(--spacing-xl) auto;
-    }
-    .speedometer-svg {
-        width: 100%;
-        height: auto;
-        display: block;
-    }
-    .speedometer-bg { /* Background arc */
-        fill: none;
-        stroke: var(--border-color); /* Use theme border color */
-        stroke-width: 30;
-        stroke-linecap: round;
-    }
-    .speedometer-progress { /* Progress arc */
-        fill: none;
-        stroke: var(--primary-color); /* Use theme primary color */
-        stroke-width: 30;
-        stroke-linecap: round;
-        stroke-dasharray: 471; /* Approx circumference of a 150 radius circle (pi * 300), then halved for semi-circle */
-        stroke-dashoffset: 471;
-        transition: stroke-dashoffset 0.2s linear, stroke 0.3s ease;
-    }
-    .speedometer-needle {
-        fill: var(--accent-color); /* Use theme accent for needle */
-        transform-origin: center 150px; /* Assuming SVG center is around 150,150 */
-        transition: transform 0.2s linear;
-        /* Needle shape: a simple triangle */
-    }
-    .speedometer-center-disc {
-        fill: var(--accent-gray);
-    }
-    .speedometer-text {
-        font-family: var(--font-family-headings);
-        font-size: clamp(1.8rem, 4vw, 2.5rem);
-        font-weight: 700;
-        fill: var(--text-color-primary);
-        text-anchor: middle;
-    }
-    .loading-title-text { /* For "AscentAlert" */
-        font-family: var(--font-family-headings); /* Or 'Racing Sans One' for special title */
-        font-size: clamp(2rem, 5vw, 3.5rem);
-        font-weight: 900;
-        margin-bottom: var(--spacing-sm);
-        color: var(--text-color-primary);
-    }
-    .loading-title-text .logo-accent { color: var(--primary-color); }
-
-    .driving-tips-loading {
-        font-family: var(--font-family-body);
-        font-size: clamp(0.9rem, 1.8vw, 1.1rem);
-        color: var(--text-color-secondary);
-        margin-top: var(--spacing-md);
-        min-height: 2.5em; /* Reserve space for two lines of text */
-    }
-    /* Hide script tags from rendering if any slip through */
-    script { display: none; }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="loading-content-wrapper">
-    <div class="speedometer-container">
-        <svg id="speedometerSvg" class="speedometer-svg" viewBox="0 0 300 180">
-            <!-- Background Arc (Semi-circle) -->
-            <path class="speedometer-bg" d="M 30 150 A 120 120 0 0 1 270 150" />
-            <!-- Progress Arc -->
-            <path id="speedometerProgress" class="speedometer-progress" d="M 30 150 A 120 120 0 0 1 270 150" />
-            <!-- Needle -->
-            <polygon id="speedometerNeedle" class="speedometer-needle" points="150,150 145,40 155,40" transform="rotate(-90 150 150)" />
-            <!-- Center Disc for Needle -->
-            <circle class="speedometer-center-disc" cx="150" cy="150" r="10" />
-            <!-- Speed Text -->
-            <text id="speedometerText" class="speedometer-text" x="150" y="130">0%</text>
-        </svg>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading - Ascent Alert</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body class="loading-body">
+    <div class="loading-container">
+        <div class="speedometer-wrapper">
+            <div class="speedometer">
+                <canvas id="speedometerCanvas" width="200" height="200"></canvas>
+            </div>
+        </div>
+        <div class="driving-tips">
+            <p id="tip-text"><i class="fas fa-lightbulb"></i> <span class="tip-content">Safety Tip: Always maintain a safe speed on ghat roads, especially during sharp turns.</span></p>
+        </div>
     </div>
-    <h1 class="loading-title-text">Ascent<span class="logo-accent">Alert</span></h1>
-    <div class="driving-tips-loading">
-        <p id="tipTextLoading">Initializing safety protocols...</p>
-    </div>
-</div>
 
-<script>
-    document.body.classList.add('loading-active'); // Apply special body styles
+    <script>
+        // Driving tips carousel
+        const tips = [
+            "Safety Tip: Always maintain a safe speed on ghat roads, especially during sharp turns.",
+            "Safety Tip: Use low gears when descending steep slopes to maintain control.",
+            "Safety Tip: Keep a safe distance from other vehicles on narrow ghat roads.",
+            "Safety Tip: Check your brakes before starting a journey on mountainous terrain.",
+            "Safety Tip: Avoid overtaking on blind curves; wait for a clear view ahead.",
+            "Safety Tip: Use fog lights and reduce speed in low-visibility conditions like fog or heavy rain.",
+            "Safety Tip: Watch for loose gravel or rocks on the road, which can cause skidding."
+        ];
 
-    const speedTextElement = document.getElementById('speedometerText');
-    const needleElement = document.getElementById('speedometerNeedle');
-    const progressElement = document.getElementById('speedometerProgress');
-    const tipTextElement = document.getElementById('tipTextLoading');
+        let currentTipIndex = 0;
+        const tipElement = document.querySelector('.tip-content');
 
-    const MAX_PERCENTAGE = 100;
-    const ANIMATION_DURATION = 3000; // 3 seconds
-    const UPDATE_INTERVAL = 50; // ms
-    let currentPercentage = 0;
-    const increment = (MAX_PERCENTAGE / (ANIMATION_DURATION / UPDATE_INTERVAL));
-
-    // For semi-circle path d="M 30 150 A 120 120 0 0 1 270 150"
-    // Radius is 120. Circumference of full circle = 2 * PI * 120 approx 754.
-    // For semi-circle, length is approx 377.
-    const progressArcLength = 377; // Approximate length of the semi-circular path
-    progressElement.style.strokeDasharray = progressArcLength;
-    progressElement.style.strokeDashoffset = progressArcLength;
-
-
-    const tips = [
-        "Always check your brakes before a descent.",
-        "Use engine braking on steep slopes.",
-        "Honk at blind turns to alert oncoming traffic.",
-        "Avoid overtaking on hairpin bends.",
-        "Maintain a safe distance, especially in wet conditions.",
-        "Be cautious of fog and reduced visibility.",
-        "Watch out for wildlife crossing the road.",
-        "Ensure your tires have adequate tread.",
-        "Plan your journey to avoid driving in extreme weather.",
-        "Stay alert, ghat roads demand full attention."
-    ];
-    let tipIndex = 0;
-
-    function updateTip() {
-        tipTextElement.textContent = tips[tipIndex];
-        tipIndex = (tipIndex + 1) % tips.length;
-    }
-    updateTip(); // Show first tip immediately
-    const tipInterval = setInterval(updateTip, 2000); // Change tip every 2 seconds
-
-    const loadingInterval = setInterval(() => {
-        currentPercentage += increment;
-        if (currentPercentage >= MAX_PERCENTAGE) {
-            currentPercentage = MAX_PERCENTAGE;
-            clearInterval(loadingInterval);
-            clearInterval(tipInterval);
-            // Redirect to home page after loading completes
-            window.location.href = "{{ url_for('index') }}";
+        function showNextTip() {
+            currentTipIndex = (currentTipIndex + 1) % tips.length;
+            tipElement.textContent = tips[currentTipIndex];
         }
 
-        speedTextElement.textContent = `${Math.round(currentPercentage)}%`;
-        
-        // Needle rotation: -90 degrees is 0%, +90 degrees is 100%. Total 180 degrees.
-        const needleAngle = (currentPercentage / MAX_PERCENTAGE) * 180 - 90;
-        needleElement.setAttribute('transform', `rotate(${needleAngle} 150 150)`);
+        // Change tip every 3 seconds
+        setInterval(showNextTip, 1000);
 
-        // Progress arc
-        const progressOffset = progressArcLength - (currentPercentage / MAX_PERCENTAGE) * progressArcLength;
-        progressElement.style.strokeDashoffset = progressOffset;
+        // Speedometer animation
+        const canvas = document.getElementById('speedometerCanvas');
+        const ctx = canvas.getContext('2d');
+        let speed = 0;
+        const maxSpeed = 120;
+        const radius = 80;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
 
-    }, UPDATE_INTERVAL);
-</script>
-{% endblock %}
+        function drawSpeedometer() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-{% block scripts_extra %}
-<!-- No extra scripts needed for loading page usually -->
-{% endblock %}
+            // Draw outer arc
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            // Draw speed arc
+            const speedAngle = (speed / maxSpeed) * Math.PI + Math.PI;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, Math.PI, speedAngle);
+            ctx.strokeStyle = '#E10600';
+            ctx.lineWidth = 10;
+            ctx.stroke();
+
+            // Draw needle
+            const needleAngle = (speed / maxSpeed) * Math.PI + Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + radius * Math.cos(needleAngle), centerY + radius * Math.sin(needleAngle));
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw center circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = '#E10600';
+            ctx.fill();
+
+            // Animate speed
+            speed = (speed + 1) % maxSpeed;
+            requestAnimationFrame(drawSpeedometer);
+        }
+
+        drawSpeedometer();
+
+        // Redirect after 3 seconds
+        setTimeout(() => {
+            window.location.href = "{{ url_for('login') }}";
+        }, 5000);
+    </script>
+</body>
+</html>

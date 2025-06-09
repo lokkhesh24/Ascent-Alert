@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Ascent Alert{% endblock %}
+{% block content %}
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <video class="hero-video" autoplay loop muted playsinline poster="{{ url_for('static', filename='images/ghat-road-bg.jpg') }}" id="hero-video">
+            <source src="{{ url_for('static', filename='videos/ghat-road-bg.mp4') }}" type="video/mp4" id="mp4-source">
+            <source src="{{ url_for('static', filename='videos/ghat-road-bg.webm') }}" type="video/webm" id="webm-source">
+            Your browser does not support the video tag. Please ensure the video file is available in the "static/videos/" folder.
+        </video>
+        <div class="hero-content">
+            <h1>Welcome to Ascent Alert</h1>
+            <p>Stay safe on ghat roads with real-time safety predictions and incident reporting.</p>
+            <a href="{{ url_for('predictor') }}" class="btn btn-predict"><i class="fas fa-shield-alt"></i> Predict Safety Now</a>
+        </div>
+    </div>
+
+    <!-- Featured Ghat Roads -->
+    <h1>Featured Ghat Roads</h1>
+    <p class="intro-text">Explore some of the most challenging and scenic ghat roads in India.</p>
+    <div class="road-grid">
+        {% for road in ghat_roads %}
+            <a href="https://www.google.com/search?q={{ road.Location | urlencode }}" target="_blank" class="road-card-link">
+                <div class="road-card">
+                    <img src="{{ url_for('static', filename='images/' + road.Image) }}" alt="{{ road.Location }}">
+                    <h3>{{ road.Short_Location }}</h3>
+                    <p>{{ road.Description }}</p>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+
+    <style>
+        .hero-section {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+            background: url('{{ url_for('static', filename='images/ghat-road-bg.jpg') }}') no-repeat center center/cover;
+        }
+        .hero-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -1;
+        }
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            color: #FFFFFF;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.7);
+        }
+        .hero-content h1 {
+            font-family: 'Oswald', sans-serif;
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #E10600, #FFD700);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-content p {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            background: #E10600;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 2;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+        }
+    </style>
+
+    <script>
+        // Debug video loading
+        const video = document.getElementById('hero-video');
+        const mp4Source = document.getElementById('mp4-source').src;
+        const webmSource = document.getElementById('webm-source').src;
+        console.log('Attempting to load video:');
+        console.log('MP4 URL:', mp4Source);
+        console.log('WebM URL:', webmSource);
+
+        video.addEventListener('loadeddata', () => {
+            console.log('Video loaded successfully');
+            video.play().catch(err => {
+                console.log('Autoplay failed:', err.message);
+                addPlayButton();
+            });
+        });
+
+        video.addEventListener('error', (e) => {
+            console.error('Error loading video:', e);
+            console.log('Falling back to the poster image. Ensure "ghat-road-bg.mp4" or "ghat-road-bg.webm" is in the "static/videos/" folder.');
+            console.log('Check the file path, format, and browser compatibility. You can also test the video by opening the URL directly in your browser:', mp4Source);
+            addPlayButton();
+        });
+
+        video.addEventListener('play', () => {
+            console.log('Video is playing');
+        });
+
+        video.addEventListener('pause', () => {
+            console.log('Video is paused');
+        });
+
+        function addPlayButton() {
+            const existingButton = document.querySelector('.play-button');
+            if (!existingButton) {
+                const playButton = document.createElement('button');
+                playButton.className = 'play-button';
+                playButton.textContent = 'Play Background Video';
+                playButton.addEventListener('click', () => {
+                    video.play().then(() => {
+                        playButton.remove();
+                    }).catch(err => {
+                        console.log('Manual play failed:', err.message);
+                    });
+                });
+                document.querySelector('.hero-section').appendChild(playButton);
+            }
+        }
+    </script>
+{% endblock %}

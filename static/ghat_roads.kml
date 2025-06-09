@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+    <name>Ghat Roads in India</name>
+    <description>Locations of 10 ghat roads in India for viewing in Google Earth.</description>
+    <Placemark>
+        <name>Khar</name>
+        <description>Khardung La Pass, Ladakh</description>
+        <Point>
+            <coordinates>77.9211,34.1526,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Zoji</name>
+        <description>Zoji La, Jammu and Kashmir</description>
+        <Point>
+            <coordinates>75.3167,34.2667,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Nathu</name>
+        <description>Nathu La, Sikkim</description>
+        <Point>
+            <coordinates>88.8311,27.3861,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Rohtang</name>
+        <description>Rohtang Pass, Himachal Pradesh</description>
+        <Point>
+            <coordinates>77.2454,32.3716,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Banihal</name>
+        <description>Banihal Pass, Jammu and Kashmir</description>
+        <Point>
+            <coordinates>75.1960,33.4319,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Shipki</name>
+        <description>Shipki La, Himachal Pradesh</description>
+        <Point>
+            <coordinates>78.7346,31.8319,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Lipulekh</name>
+        <description>Lipulekh Pass, Uttarakhand</description>
+        <Point>
+            <coordinates>81.3167,30.2333,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Mana</name>
+        <description>Mana Pass, Uttarakhand</description>
+        <Point>
+            <coordinates>79.6167,30.7667,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Niti</name>
+        <description>Niti Pass, Uttarakhand</description>
+        <Point>
+            <coordinates>79.9167,30.9833,0</coordinates>
+        </Point>
+    </Placemark>
+    <Placemark>
+        <name>Bomdila</name>
+        <description>Bomdila Pass, Arunachal Pradesh</description>
+        <Point>
+            <coordinates>92.4155,27.2648,0</coordinates>
+        </Point>
+    </Placemark>
+</Document>
+</kml>

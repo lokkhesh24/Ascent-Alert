@@ -1,239 +1,156 @@
 {% extends "base.html" %}
-
+{% block title %}Dashboard - Ascent Alert{% endblock %}
 {% block content %}
-<div class="page-container dashboard-page section-padding">
-    <div class="container">
-        <div class="dashboard-header text-center">
-            <h1 class="section-title dynamic-heading">Accident Data <span class="highlight">Dashboard</span></h1>
-            <p class="section-intro">Visualizing trends and insights from ghat road accident data.</p>
+    <div class="dashboard-container">
+        <h1>Accident Analysis Dashboard</h1>
+        <div class="chart">
+            <h2>Severity Distribution</h2>
+            <canvas id="severityChart"></canvas>
         </div>
-
-        {% if not charts_data %}
-            <div class="alert alert-warning text-center">
-                <p><i class="fas fa-exclamation-triangle"></i> Dashboard data is currently unavailable or could not be loaded. Please try again later or check data source.</p>
-            </div>
-        {% else %}
-            <div class="dashboard-grid">
-                <!-- Casualties by Location -->
-                <div class="chart-card flexible-card">
-                    <h3 class="chart-title"><i class="fas fa-map-marked-alt"></i> Casualties by Location</h3>
-                    <canvas id="casualtiesByLocationChart"></canvas>
-                </div>
-
-                <!-- Accidents by Hour -->
-                <div class="chart-card flexible-card">
-                    <h3 class="chart-title"><i class="fas fa-hourglass-half"></i> Accidents by Hour of Day</h3>
-                    <canvas id="accidentsByHourChart"></canvas>
-                </div>
-
-                <!-- Accidents by Weather -->
-                <div class="chart-card flexible-card">
-                    <h3 class="chart-title"><i class="fas fa-cloud-showers-heavy"></i> Accidents by Weather</h3>
-                    <canvas id="accidentsByWeatherChart"></canvas>
-                </div>
-                
-                <!-- Accidents by Road Condition -->
-                <div class="chart-card flexible-card">
-                    <h3 class="chart-title"><i class="fas fa-road-barrier"></i> Accidents by Road Condition</h3>
-                    <canvas id="accidentsByRoadChart"></canvas>
-                </div>
-
-                <!-- Casualties by Vehicles Involved -->
-                <div class="chart-card flexible-card">
-                    <h3 class="chart-title"><i class="fas fa-car-crash"></i> Casualties by Vehicles Involved</h3>
-                    <canvas id="casualtiesByVehiclesChart"></canvas>
-                </div>
-            </div>
-        {% endif %}
+        <div class="chart">
+            <h2>Weather Conditions</h2>
+            <canvas id="weatherChart"></canvas>
+        </div>
+        <div class="chart">
+            <h2>Road Conditions</h2>
+            <canvas id="roadChart"></canvas>
+        </div>
+        <div class="chart small-chart">
+            <h2>Hourly Accident Trends</h2>
+            <canvas id="hourlyChart"></canvas>
+        </div>
+        <div class="pdf-button-container">
+            <button id="downloadPDF" class="btn btn-predict"><i class="fas fa-file-pdf"></i> Download PDF Report</button>
+        </div>
     </div>
-</div>
-{% endblock %}
 
-{% block scripts_extra %}
-{% if charts_data %}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const chartColors = {
-        primary: 'var(--primary-color)', // Ferrari Red
-        accent: 'var(--accent-color)',   // Ferrari Yellow
-        textPrimary: 'var(--text-color-primary)',
-        gridLines: 'var(--border-color)',
-        background: 'var(--card-background-color)'
-    };
+    <script>
+        window.onload = function() {
+            // Chart.js setup
+            const severityCtx = document.getElementById('severityChart').getContext('2d');
+            const weatherCtx = document.getElementById('weatherChart').getContext('2d');
+            const roadCtx = document.getElementById('roadChart').getContext('2d');
+            const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
 
-    const commonChartOptions = (titleText) => ({
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
-                labels: { color: chartColors.textPrimary, font: { family: 'Inter' } }
-            },
-            title: {
-                display: false, // Title is in card header
-                text: titleText,
-                color: chartColors.textPrimary,
-                font: { size: 16, family: 'Poppins', weight: '600' }
-            },
-            tooltip: {
-                backgroundColor: 'rgba(0,0,0,0.8)',
-                titleFont: { family: 'Poppins', size: 14 },
-                bodyFont: { family: 'Inter', size: 12 },
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { color: chartColors.textPrimary, font: { family: 'Inter' } },
-                grid: { color: chartColors.gridLines, drawBorder: false }
-            },
-            x: {
-                ticks: { color: chartColors.textPrimary, font: { family: 'Inter' } },
-                grid: { color: chartColors.gridLines, display: false }
-            }
-        }
-    });
-    
-    // Chart 1: Casualties by Location
-    const cblCtx = document.getElementById('casualtiesByLocationChart');
-    if (cblCtx && {{ charts_data.casualties_by_location|tojson|safe }}) {
-        const cblData = {{ charts_data.casualties_by_location|tojson|safe }};
-        new Chart(cblCtx, {
-            type: 'bar',
-            data: {
-                labels: cblData.labels,
-                datasets: [{
-                    label: 'Total Casualties',
-                    data: cblData.values,
-                    backgroundColor: chartColors.primary,
-                    borderColor: chartColors.primary,
-                    borderWidth: 1,
-                    borderRadius: 5,
-                }]
-            },
-            options: commonChartOptions('Casualties by Location')
-        });
-    }
-
-    // Chart 2: Accidents by Hour
-    const abhCtx = document.getElementById('accidentsByHourChart');
-    if (abhCtx && {{ charts_data.accidents_by_hour|tojson|safe }}) {
-        const abhData = {{ charts_data.accidents_by_hour|tojson|safe }};
-        new Chart(abhCtx, {
-            type: 'line',
-            data: {
-                labels: abhData.labels,
-                datasets: [{
-                    label: 'Number of Accidents',
-                    data: abhData.values,
-                    borderColor: chartColors.accent,
-                    backgroundColor: 'rgba(255, 213, 0, 0.2)', // Lighter yellow fill
-                    tension: 0.3,
-                    fill: true,
-                }]
-            },
-            options: commonChartOptions('Accidents by Hour of Day')
-        });
-    }
-
-    // Chart 3: Accidents by Weather
-    const abwCtx = document.getElementById('accidentsByWeatherChart');
-    if (abwCtx && {{ charts_data.accidents_by_weather|tojson|safe }}) {
-        const abwData = {{ charts_data.accidents_by_weather|tojson|safe }};
-        new Chart(abwCtx, {
-            type: 'pie', // Changed to pie for variety
-            data: {
-                labels: abwData.labels,
-                datasets: [{
-                    label: 'Accidents',
-                    data: abwData.values,
-                    backgroundColor: [
-                        'rgba(212, 0, 0, 0.8)',        // Ferrari Red
-                        'rgba(255, 213, 0, 0.8)',    // Ferrari Yellow
-                        'rgba(54, 162, 235, 0.8)',   // Blue
-                        'rgba(75, 192, 192, 0.8)',    // Green
-                        'rgba(153, 102, 255, 0.8)',  // Purple
-                        'rgba(255, 159, 64, 0.8)'    // Orange
-                    ],
-                    borderColor: chartColors.background, // Use card background for border to make slices distinct
-                    borderWidth: 2
-                }]
-            },
-            options: { // Pie charts have slightly different options
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right', labels: { color: chartColors.textPrimary, font: { family: 'Inter' } } },
-                    title: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleFont: { family: 'Poppins', size: 14 },
-                        bodyFont: { family: 'Inter', size: 12 },
+            // Severity Distribution (Pie Chart)
+            new Chart(severityCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys({{ severity_counts | tojson }}),
+                    datasets: [{
+                        data: Object.values({{ severity_counts | tojson }}),
+                        backgroundColor: ['#E10600', '#C0C0C0', '#FFD700']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' }
                     }
                 }
-            }
-        });
-    }
+            });
 
-    // Chart 4: Accidents by Road Condition
-    const abrCtx = document.getElementById('accidentsByRoadChart');
-    if (abrCtx && {{ charts_data.accidents_by_road|tojson|safe }}) {
-        const abrData = {{ charts_data.accidents_by_road|tojson|safe }};
-        new Chart(abrCtx, {
-            type: 'doughnut',
-            data: {
-                labels: abrData.labels,
-                datasets: [{
-                    label: 'Accidents',
-                    data: abrData.values,
-                     backgroundColor: [
-                        'rgba(212, 0, 0, 0.7)',        // Ferrari Red
-                        'rgba(255, 213, 0, 0.7)',    // Ferrari Yellow
-                        'rgba(26, 26, 26, 0.7)',      // Dark Grey / Nero
-                        'rgba(100, 100, 100, 0.7)',   // Medium Grey
-                        'rgba(204, 204, 204, 0.7)'    // Light Grey
-                    ],
-                    borderColor: chartColors.background,
-                    borderWidth: 2
-                }]
-            },
-             options: { 
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right', labels: { color: chartColors.textPrimary, font: { family: 'Inter' } } },
-                    title: { display: false },
-                    tooltip: {
-                        backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleFont: { family: 'Poppins', size: 14 },
-                        bodyFont: { family: 'Inter', size: 12 },
+            // Weather Conditions (Bar Chart)
+            new Chart(weatherCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys({{ weather_counts | tojson }}),
+                    datasets: [{
+                        label: 'Accidents by Weather',
+                        data: Object.values({{ weather_counts | tojson }}),
+                        backgroundColor: '#E10600'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
                     }
                 }
-            }
-        });
-    }
+            });
 
-    // Chart 5: Casualties by Vehicles Involved
-    const cbvCtx = document.getElementById('casualtiesByVehiclesChart');
-    if (cbvCtx && {{ charts_data.casualties_by_vehicles|tojson|safe }}) {
-        const cbvData = {{ charts_data.casualties_by_vehicles|tojson|safe }};
-        new Chart(cbvCtx, {
-            type: 'bar',
-            data: {
-                labels: cbvData.labels,
-                datasets: [{
-                    label: 'Total Casualties',
-                    data: cbvData.values,
-                    backgroundColor: chartColors.accent, // Use accent yellow
-                    borderColor: chartColors.accent,
-                    borderWidth: 1,
-                    borderRadius: 5,
-                }]
-            },
-            options: commonChartOptions('Casualties by Vehicles Involved')
-        });
-    }
-});
-</script>
-{% endif %}
+            // Road Conditions (Bar Chart)
+            new Chart(roadCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys({{ road_counts | tojson }}),
+                    datasets: [{
+                        label: 'Accidents by Road Condition',
+                        data: Object.values({{ road_counts | tojson }}),
+                        backgroundColor: '#E10600'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // Hourly Accident Trends (Line Chart)
+            const hourlyData = Array(24).fill(0); // Initialize array for 24 hours
+            const hourlyCounts = {{ hourly_counts | tojson }};
+            for (let hour in hourlyCounts) {
+                hourlyData[parseInt(hour)] = hourlyCounts[hour];
+            }
+
+            new Chart(hourlyCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => i.toString()),
+                    datasets: [{
+                        label: 'Accidents per Hour',
+                        data: hourlyData,
+                        borderColor: '#E10600',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+
+            // PDF Download
+            document.getElementById('downloadPDF').addEventListener('click', async () => {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF();
+                    let yOffset = 20;
+
+                    doc.setFontSize(20);
+                    doc.text('Ascent Alert Dashboard Report', 105, yOffset, { align: 'center' });
+                    yOffset += 20;
+
+                    const charts = ['severityChart', 'weatherChart', 'roadChart', 'hourlyChart'];
+                    for (const chartId of charts) {
+                        const canvas = document.getElementById(chartId);
+                        if (!canvas) {
+                            console.error(`Canvas with ID ${chartId} not found.`);
+                            continue;
+                        }
+                        const imgData = canvas.toDataURL('image/png');
+                        const imgProps = doc.getImageProperties(imgData);
+                        const pdfWidth = 180;
+                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        doc.addImage(imgData, 'PNG', 15, yOffset, pdfWidth, pdfHeight);
+                        yOffset += pdfHeight + 20;
+
+                        if (yOffset > 260) {
+                            doc.addPage();
+                            yOffset = 20;
+                        }
+                    }
+
+                    doc.save('Ascent_Alert_Dashboard.pdf');
+                } catch (error) {
+                    console.error('Error generating PDF:', error);
+                    alert('Failed to generate PDF. Please ensure charts are rendered and try again.');
+                }
+            });
+        };
+    </script>
 {% endblock %}

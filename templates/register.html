@@ -1,44 +1,20 @@
 {% extends "base.html" %}
-
+{% block title %}Register - Ascent Alert{% endblock %}
 {% block content %}
-<div class="auth-page-wrapper">
-    <video autoplay muted loop class="auth-video-bg">
-        <!-- Replace with your actual video path -->
-        <source src="{{ url_for('static', filename='videos/register_bg.mp4') }}" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
-    <div class="auth-overlay"></div>
-    <div class="auth-container">
-        <div class="auth-card flexible-card">
-            <div class="auth-header">
-                <i class="fas fa-user-plus auth-icon"></i>
-                <h1 class="auth-title dynamic-heading">Create Account</h1>
-                <p class="auth-subtitle">Join AscentAlert for safer journeys.</p>
-            </div>
-            <form action="{{ url_for('register') }}" method="POST" class="auth-form">
-                <div class="form-group">
-                    <label for="username"><i class="fas fa-user icon-prefix"></i>Username</label>
-                    <input type="text" id="username" name="username" class="form-control" placeholder="Choose a username" required>
-                </div>
-                <div class="form-group">
-                    <label for="email"><i class="fas fa-envelope icon-prefix"></i>Email</label>
-                    <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" required>
-                </div>
-                <div class="form-group">
-                    <label for="password"><i class="fas fa-key icon-prefix"></i>Password</label>
-                    <input type="password" id="password" name="password" class="form-control" placeholder="Create a strong password" required>
-                </div>
-                <!-- Optional: Confirm Password -->
-                <!-- <div class="form-group">
-                    <label for="confirm_password"><i class="fas fa-key icon-prefix"></i>Confirm Password</label>
-                    <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Confirm your password" required>
-                </div> -->
-                <button type="submit" class="btn btn-primary btn-block auth-submit-btn">Register <i class="fas fa-check-circle"></i></button>
+    <div class="login-container">
+        <div class="glass-card">
+            <h1>Register for Ascent Alert</h1>
+            <form method="POST" action="{{ url_for('register') }}" class="login-form">
+                <label for="username"><i class="fas fa-user"></i> Username</label>
+                <input type="text" id="username" name="username" placeholder="Choose a username" required>
+                <label for="password"><i class="fas fa-lock"></i> Password</label>
+                <input type="password" id="password" name="password" placeholder="Create a password" required>
+                <button type="submit" class="btn btn-login"><i class="fas fa-user-plus"></i> Register</button>
             </form>
-            <div class="auth-footer">
-                <p>Already have an account? <a href="{{ url_for('login') }}" class="auth-link">Login Here</a></p>
-            </div>
+            <p>Already have an account? <a href="{{ url_for('login') }}" class="signup-link">Login here</a>.</p>
+        </div>
+        <div class="lock-icon">
+            <img src="{{ url_for('static', filename='images/lock-icon.png') }}" alt="Lock Icon">
         </div>
     </div>
-</div>
 {% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Prediction Result - Ascent Alert{% endblock %}
+{% block content %}
+    <h1>Prediction Result</h1>
+    <div class="result-container">
+        <h2>Accident Severity: {{ prediction }}</h2>
+        {% if slope is defined and radius is defined %}
+            <p><strong>Slope:</strong> {{ slope }} degrees</p>
+            <p><strong>Radius:</strong> {{ radius }} meters</p>
+        {% endif %}
+        <a href="{{ url_for('predictor') }}" class="btn btn-predict"><i class="fas fa-arrow-left"></i> Back to Predictor</a>
+    </div>
+
+    <style>
+        .result-container {
+            text-align: center;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            margin-top: 20px;
+            animation: glow 3s ease-in-out infinite;
+        }
+    </style>
+{% endblock %}

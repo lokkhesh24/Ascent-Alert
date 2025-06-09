@@ -1,0 +1,712 @@
+/* Import Google Fonts for Oswald (headings) and Montserrat (body text) */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Montserrat:wght@400;500&display=swap');
+
+/* Define Ferrari SF 25 color variables */
+:root {
+    --ferrari-red: #E10600;
+    --ferrari-silver: #C0C0C0;
+    --ferrari-dark: #1C2526;
+    --ferrari-white: #FFFFFF;
+    --ferrari-gold: #FFD700;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding: 0;
+    color: var(--ferrari-white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, var(--ferrari-dark), #2E3B3E);
+    transition: background 5s ease-in-out;
+    scroll-behavior: smooth;
+}
+
+.container {
+    flex: 1 0 auto;
+    max-width: 1200px;
+    margin: 80px auto 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    animation: glow 3s ease-in-out infinite;
+}
+
+/* Navbar */
+.navbar {
+    background: transparent;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+}
+
+.nav-brand .btn-main {
+    background: var(--ferrari-red);
+    color: var(--ferrari-white);
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 18px;
+    font-family: 'Oswald', sans-serif;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.nav-brand .btn-main:hover {
+    background: var(--ferrari-gold);
+    transform: scale(1.05);
+}
+
+.nav-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    margin-right: 50px;
+}
+
+.nav-links li {
+    margin-left: 10px;
+}
+
+.nav-links .btn {
+    background: var(--ferrari-red);
+    color: var(--ferrari-white);
+    padding: 10px 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 16px;
+    font-family: 'Montserrat', sans-serif;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.nav-links .btn-home { background: var(--ferrari-red); }
+.nav-links .btn-predictor { background: var(--ferrari-red); }
+.nav-links .btn-dashboard { background: var(--ferrari-red); }
+.nav-links .btn-about { background: var(--ferrari-red); }
+.nav-links .btn-logout { background: var(--ferrari-red); }
+.nav-links .btn-login-nav { background: var(--ferrari-red); }
+
+.nav-links .btn:hover {
+    background: var(--ferrari-gold);
+    transform: scale(1.05);
+}
+
+.nav-brand {
+    margin-left: 10px;
+}
+
+/* Typography */
+h1 {
+    text-align: center;
+    font-family: 'Oswald', sans-serif;
+    font-size: 36px;
+    color: var(--ferrari-white);
+    margin-bottom: 20px;
+}
+
+h2 {
+    font-family: 'Oswald', sans-serif;
+    color: var(--ferrari-white);
+    text-align: center;
+    margin-top: 30px;
+}
+
+h3 {
+    font-family: 'Oswald', sans-serif;
+    color: var(--ferrari-silver);
+    margin: 10px 0;
+}
+
+p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ferrari-white);
+}
+
+.intro-text {
+    text-align: center;
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: var(--ferrari-silver);
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, var(--ferrari-red), var(--ferrari-dark));
+    color: var(--ferrari-white);
+    text-align: center;
+    overflow: hidden;
+}
+
+.hero-section h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+    background: linear-gradient(to right, var(--ferrari-red), var(--ferrari-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-section p {
+    font-size: 24px;
+    max-width: 600px;
+}
+
+/* Road Grid */
+.road-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.road-card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.road-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 15px;
+    text-align: center;
+    width: 250px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    animation: glow 3s ease-in-out infinite;
+}
+
+.road-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5);
+}
+
+.road-card img {
+    max-width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+/* Login/Register */
+.login-container {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, var(--ferrari-dark), #2E3B3E);
+    padding: 20px;
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--ferrari-silver);
+    border-radius: 20px;
+    padding: 40px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 1;
+    color: var(--ferrari-white);
+    animation: glow 3s ease-in-out infinite;
+}
+
+.login-form label {
+    display: block;
+    margin: 15px 0 5px;
+    font-weight: 500;
+    color: var(--ferrari-silver);
+    text-align: left;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--ferrari-silver);
+    border-radius: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--ferrari-white);
+    font-size: 16px;
+}
+
+.login-form input::placeholder {
+    color: var(--ferrari-silver);
+}
+
+.login-form input:focus {
+    outline: none;
+    border-color: var(--ferrari-gold);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-login {
+    background: var(--ferrari-red);
+    color: var(--ferrari-white);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    width: 100%;
+    margin-top: 10px;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.btn-login:hover {
+    background: var(--ferrari-gold);
+    transform: scale(1.05);
+}
+
+.signup-link {
+    color: var(--ferrari-gold);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.signup-link:hover {
+    text-decoration: underline;
+}
+
+.lock-icon {
+    position: absolute;
+    top: 50%;
+    right: 20%;
+    transform: translateY(-50%);
+    opacity: 0.7;
+}
+
+.lock-icon img {
+    width: 100px;
+    height: auto;
+}
+
+/* Bento Grid */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 10px;
+    justify-items: center;
+}
+
+.bento-box {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease;
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+    animation: glow 3s ease-in-out infinite;
+}
+
+.bento-box:hover {
+    transform: translateY(-5px);
+}
+
+.bento-box label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 500;
+    color: var(--ferrari-silver);
+}
+
+.bento-box input,
+.bento-box select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid var(--ferrari-silver);
+    border-radius: 8px;
+    font-size: 16px;
+    margin: 0 auto;
+    display: block;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--ferrari-white);
+}
+
+.bento-box.full-width {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+/* Incident Form Grid */
+.incident-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+}
+
+.incident-form-grid .bento-box {
+    margin: 0;
+    max-width: none;
+}
+
+.incident-form-grid textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    border: 2px solid var(--ferrari-silver);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--ferrari-white);
+    resize: vertical;
+}
+
+/* Buttons */
+.button-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.3s ease, background 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    color: var(--ferrari-white);
+    position: relative;
+    background: var(--ferrari-red);
+}
+
+.btn:hover {
+    background: var(--ferrari-gold);
+    transform: scale(1.05);
+}
+
+.btn-main,
+.btn-home,
+.btn-predictor,
+.btn-dashboard,
+.btn-about,
+.btn-logout,
+.btn-login-nav,
+.btn-predict,
+.btn-secondary,
+.button.dark-red {
+    background: var(--ferrari-red);
+}
+
+.btn-main:hover,
+.btn-home:hover,
+.btn-predictor:hover,
+.btn-dashboard:hover,
+.btn-about:hover,
+.btn-logout:hover,
+.btn-login-nav:hover,
+.btn-predict:hover,
+.btn-secondary:hover,
+.button.dark-red:hover {
+    background: var(--ferrari-gold);
+}
+
+/* Flash Messages */
+.flash-success {
+    background: var(--ferrari-red);
+    color: var(--ferrari-white);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.flash-error {
+    background: var(--ferrari-red);
+    color: var(--ferrari-white);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Map Container */
+.map-container {
+    text-align: center;
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    animation: glow 3s ease-in-out infinite;
+}
+
+.map-container iframe {
+    border: 2px solid var(--ferrari-silver);
+}
+
+/* Weather Section */
+.weather-data-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--ferrari-dark), #2E3B3E);
+    border-radius: 15px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    animation: glow 3s ease-in-out infinite;
+    transition: transform 0.3s ease;
+}
+
+.weather-data-section:hover {
+    transform: translateY(-5px);
+}
+
+.weather-card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+}
+
+.weather-item {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    min-width: 200px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.weather-item:hover {
+    transform: scale(1.05);
+}
+
+.weather-item i {
+    font-size: 24px;
+    color: var(--ferrari-gold);
+    margin-bottom: 10px;
+}
+
+.weather-item p {
+    margin: 5px 0;
+}
+
+/* Live Mode Toggle */
+.live-mode-toggle {
+    text-align: center;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.live-mode-toggle label {
+    font-weight: 500;
+    color: var(--ferrari-silver);
+}
+
+.live-mode-toggle input[type="checkbox"] {
+    display: none;
+}
+
+.live-mode-toggle .toggle-switch {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    background: var(--ferrari-dark);
+    border-radius: 15px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.live-mode-toggle .toggle-switch::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 24px;
+    height: 24px;
+    background: var(--ferrari-silver);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.live-mode-toggle input[type="checkbox"]:checked + .toggle-switch {
+    background: var(--ferrari-red);
+}
+
+.live-mode-toggle input[type="checkbox"]:checked + .toggle-switch::before {
+    transform: translateX(30px);
+    background: var(--ferrari-white);
+}
+
+#liveStatus {
+    display: inline;
+    font-style: italic;
+    color: var(--ferrari-silver);
+}
+
+/* Incident Section */
+.incident-section {
+    margin-top: 40px;
+}
+
+#incidentForm, #viewIncidents {
+    margin-top: 20px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    animation: glow 3s ease-in-out infinite;
+}
+
+.incident-section .btn {
+    margin-right: 10px;
+}
+
+.incident-section .incident {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.incident-section .delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--ferrari-red);
+    color: var(--ferrari-white);
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.incident-section .delete-btn:hover {
+    background: var(--ferrari-gold);
+}
+
+/* Chat Container */
+.chat-container {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    animation: glow 3s ease-in-out infinite;
+}
+
+/* Loading Page */
+.loading-body {
+    background: linear-gradient(135deg, var(--ferrari-dark), #2E3B3E);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Oswald', sans-serif;
+    color: var(--ferrari-white);
+}
+
+.loading-container {
+    text-align: center;
+    border-radius: 20px;
+    padding: 40px;
+    animation: glow 3s ease-in-out infinite;
+}
+
+.speedometer-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.driving-tips p {
+    font-size: 18px;
+    color: var(--ferrari-white);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 20px;
+    border-radius: 10px;
+    margin: 0;
+}
+
+/* Dashboard */
+.dashboard-container {
+    max-width: 1200px;
+    margin: 80px auto;
+    padding: 20px;
+    text-align: center;
+}
+
+.chart {
+    margin: 30px 0;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: glow 3s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 10px var(--ferrari-red);
+    }
+    50% {
+        box-shadow: 0 0 20px var(--ferrari-silver);
+    }
+    100% {
+        box-shadow: 0 0 10px var(--ferrari-gold);
+    }
+}
+
+.fade-in-up {
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+.fade-in-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+/* Micro-Interactions */
+button, a {
+    position: relative;
+    overflow: hidden;
+}
+
+button::after, a::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: left 0.3s ease;
+}
+
+button:hover::after, a:hover::after {
+    left: 100%;
+}

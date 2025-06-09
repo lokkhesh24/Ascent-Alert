@@ -1,8 +1,10 @@
-Flask
-Flask-SQLAlchemy
-Werkzeug
-scikit-learn
-pandas
-numpy
-joblib
-# Add any other specific versions if needed, e.g., xgboost, catboost if used in final model
+flask==2.3.3
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.1
+joblib==1.4.2
+flask-session==0.5.0
+Flask-SQLAlchemy==3.0.5
+werkzeug==3.0.3
+xgboost==2.1.0
+catboost==1.2.5

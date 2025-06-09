@@ -1,20 +1,36 @@
 {% extends "base.html" %}
-{% block title %}Login{% endblock %}
+
 {% block content %}
-    <div class="login-container">
-        <div class="glass-card">
-            <h1>LOGIN</h1>
-            <form action="{{ url_for('login') }}" method="POST" class="login-form">
-                <label for="username">User Name</label>
-                <input type="text" id="username" name="username" required><br>
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required><br>
-                <button type="submit" class="btn btn-login">Log In</button>
+<div class="auth-page-wrapper">
+    <video autoplay muted loop class="auth-video-bg">
+        <!-- Replace with your actual video path -->
+        <source src="{{ url_for('static', filename='videos/login_bg.mp4') }}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="auth-overlay"></div>
+    <div class="auth-container">
+        <div class="auth-card flexible-card">
+            <div class="auth-header">
+                <i class="fas fa-lock auth-icon"></i>
+                <h1 class="auth-title dynamic-heading">Welcome Back</h1>
+                <p class="auth-subtitle">Login to access AscentAlert.</p>
+            </div>
+            <form action="{{ url_for('login') }}" method="POST" class="auth-form">
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user icon-prefix"></i>Username</label>
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Enter your username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-key icon-prefix"></i>Password</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block auth-submit-btn">Login <i class="fas fa-sign-in-alt"></i></button>
             </form>
-            <p>Don't have an account? <a href="{{ url_for('register') }}" class="signup-link">Sign Up</a></p>
-        </div>
-        <div class="lock-icon">
-            <img src="{{ url_for('static', filename='images/lock-icon.png') }}" alt="Lock Icon">
+            <div class="auth-footer">
+                <p>Don't have an account? <a href="{{ url_for('register') }}" class="auth-link">Sign Up Here</a></p>
+                <!-- <p><a href="#" class="auth-link">Forgot Password?</a></p> -->
+            </div>
         </div>
     </div>
+</div>
 {% endblock %}

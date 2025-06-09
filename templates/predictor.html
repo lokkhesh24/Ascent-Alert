@@ -1,291 +1,219 @@
 {% extends "base.html" %}
-{% block title %}Ascent Alert{% endblock %}
+
 {% block content %}
-    <h1>Safety Predictor</h1>
-    <p class="intro-text">Enter the details below to predict the accident severity on a ghat road. Use the microphone buttons to input values via voice for Location, Weather, and Road Condition.</p>
-    <div class="bento-grid">
-        <div class="bento-box">
-            <label for="time">Time</label>
-            <input type="text" id="time" name="time" placeholder="H:MM:SS AM/PM" required>
+<div class="page-container predictor-page section-padding">
+    <div class="container">
+        <div class="predictor-header text-center">
+            <h1 class="section-title dynamic-heading">Ghat Road Safety <span class="highlight">Predictor</span></h1>
+            <p class="section-intro">Input current conditions to forecast potential accident severity. Use <i class="fas fa-microphone-alt"></i> for voice input.</p>
         </div>
-        <div class="bento-box">
-            <label for="location">Location</label>
-            <div class="input-with-mic">
-                <select id="location" name="location" required>
-                    {% for loc in locations %}
-                        <option value="{{ loc }}">{{ locations_shortened[loc] }}</option>
-                    {% endfor %}
-                </select>
-                <button type="button" class="mic-btn" data-target="location"><i class="fas fa-microphone"></i></button>
-            </div>
-        </div>
-        <div class="bento-box">
-            <label for="weather">Weather</label>
-            <div class="input-with-mic">
-                <select id="weather" name="weather" required>
-                    {% for weather in weather_conditions %}
-                        <option value="{{ weather }}">{{ weather }}</option>
-                    {% endfor %}
-                </select>
-                <button type="button" class="mic-btn" data-target="weather"><i class="fas fa-microphone"></i></button>
-            </div>
-        </div>
-        <div class="bento-box">
-            <label for="road">Road Condition</label>
-            <div class="input-with-mic">
-                <select id="road" name="road" required>
-                    {% for road in road_conditions %}
-                        <option value="{{ road }}">{{ road }}</option>
-                    {% endfor %}
-                </select>
-                <button type="button" class="mic-btn" data-target="road"><i class="fas fa-microphone"></i></button>
-            </div>
-        </div>
-        <div class="bento-box">
-            <label for="vehicles">Vehicles</label>
-            <input type="number" id="vehicles" name="vehicles" min="1" max="5" required>
-        </div>
-        <div class="bento-box full-width">
-            <button type="submit" class="btn btn-predict" form="predict-form">Predict Severity</button>
-        </div>
-    </div>
-    <form id="predict-form" action="{{ url_for('predict') }}" method="POST" style="display: none;"></form>
-    <div class="map-container">
-        <h2>Ghat Roads Map</h2>
-        <iframe src="https://www.google.com/maps/d/u/0/embed?mid=1AjHYWHGxTpZTYWYi3YxUnWlayupuObo&ehbc=2E312F" width="100%" height="480"></iframe>
-        <h2>View in 3D</h2>
-        <p>Download the KML file below and open it in Google Earth to view the ghat road locations in 3D. Google Earth is free and available on desktop, mobile, or web browsers at <a href="https://earth.google.com">earth.google.com</a>.</p>
-        <a href="{{ url_for('static', filename='ghat_roads.kml') }}" download class="btn btn-predict">Download Ghat Roads KML</a>
-    </div>
-    <div class="chat-container">
-        <h2>Ask a Question</h2>
-        <p>Use the chat below to ask questions about ghat roads, safety, or the predictor tool. You can also use the voice button to speak your question.</p>
-        <div class="chat-input">
-            <div class="input-with-mic">
-                <input type="text" id="chat-input" placeholder="Type or speak your question (e.g., 'What is Khardung La?')" required>
-                <button type="button" class="mic-btn" data-target="chat-input"><i class="fas fa-microphone"></i></button>
-            </div>
-            <button type="button" id="chat-send" class="btn btn-predict">Send</button>
-        </div>
-        <div class="chat-response">
-            <h3>Answer:</h3>
-            <div id="chat-output" class="chat-output-box">Your answer will appear here.</div>
-        </div>
-    </div>
 
-    <!-- Include Font Awesome for microphone icon -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <style>
-        .input-with-mic {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .mic-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 8px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .mic-btn.listening {
-            background: #ff4444;
-        }
-        .mic-btn:hover {
-            background: #45a049;
-        }
-        .mic-btn:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        .map-container iframe {
-            max-width: 100%;
-            border: none;
-            margin-bottom: 20px;
-        }
-        .chat-container {
-            margin-top: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
-            border-radius: 10px;
-        }
-        .chat-input {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        #chat-input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        #chat-send {
-            padding: 10px 20px;
-        }
-        .chat-response {
-            margin-top: 20px;
-        }
-        .chat-output-box {
-            background: #fff;
-            padding: 15px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            min-height: 100px;
-            font-size: 16px;
-        }
-    </style>
-    <script>
-        // Check for SpeechRecognition API support
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Sorry, your browser does not support the Web Speech API. Please use a supported browser like Chrome or Edge.");
-            document.querySelectorAll('.mic-btn').forEach(btn => btn.disabled = true);
+        <!-- Prediction Result Modal -->
+        <div id="predictionModal" class="modal">
+            <div class="modal-content flexible-card">
+                <span class="close-modal-btn">&times;</span>
+                <div class="modal-icon-container">
+                    <i id="modalIcon" class="fas"></i> <!-- Icon will be set by JS -->
+                </div>
+                <h2 id="modalTitle" class="modal-title dynamic-heading"></h2>
+                <p id="modalMessage" class="modal-text"></p>
+                <button id="modalOkButton" class="btn btn-primary">Understood</button>
+            </div>
+        </div>
+
+
+        <form id="predictorForm" action="{{ url_for('predictor') }}" method="POST" class="predictor-form">
+            <div class="bento-grid">
+                <div class="bento-box flexible-card">
+                    <label for="time" class="form-label"><i class="fas fa-clock icon-prefix"></i>Time of Travel</label>
+                    <input type="time" id="time" name="time" class="form-control" required value="{{ request.form.time if request.form else '' }}">
+                    <small>Select the approximate time.</small>
+                </div>
+
+                <div class="bento-box flexible-card">
+                    <label for="location" class="form-label"><i class="fas fa-map-marker-alt icon-prefix"></i>Location</label>
+                    <div class="input-with-mic">
+                        <select id="location" name="location" class="form-control" required>
+                            <option value="" disabled {% if not request.form.location %}selected{% endif %}>Select Ghat Road Location</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc }}" {% if request.form.location == loc %}selected{% endif %}>{{ loc }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="mic-btn" data-target-select="location" aria-label="Use voice input for location">
+                            <i class="fas fa-microphone-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bento-box flexible-card">
+                    <label for="road_condition" class="form-label"><i class="fas fa-road icon-prefix"></i>Road Condition</label>
+                     <div class="input-with-mic">
+                        <select id="road_condition" name="road_condition" class="form-control" required>
+                            <option value="" disabled {% if not request.form.road_condition %}selected{% endif %}>Select Road Condition</option>
+                            {% for cond in road_conditions %}
+                            <option value="{{ cond }}" {% if request.form.road_condition == cond %}selected{% endif %}>{{ cond }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="mic-btn" data-target-select="road_condition" aria-label="Use voice input for road condition">
+                            <i class="fas fa-microphone-alt"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bento-box flexible-card">
+                    <label for="weather_condition" class="form-label"><i class="fas fa-cloud-sun-rain icon-prefix"></i>Weather Condition</label>
+                    <div class="input-with-mic">
+                        <select id="weather_condition" name="weather_condition" class="form-control" required>
+                            <option value="" disabled {% if not request.form.weather_condition %}selected{% endif %}>Select Weather Condition</option>
+                            {% for weather in weather_conditions %}
+                            <option value="{{ weather }}" {% if request.form.weather_condition == weather %}selected{% endif %}>{{ weather }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="mic-btn" data-target-select="weather_condition" aria-label="Use voice input for weather condition">
+                            <i class="fas fa-microphone-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bento-box flexible-card">
+                    <label for="vehicles_involved" class="form-label"><i class="fas fa-car-side icon-prefix"></i>Vehicles Involved (Est.)</label>
+                    <select id="vehicles_involved" name="vehicles_involved" class="form-control" required>
+                        <option value="" disabled {% if not request.form.vehicles_involved %}selected{% endif %}>Select Number of Vehicles</option>
+                         {% for v_opt in vehicles_options %}
+                            <option value="{{ v_opt }}" {% if request.form.vehicles_involved == v_opt %}selected{% endif %}>{{ v_opt }}</option>
+                        {% else %} {# Fallback if options not loaded #}
+                            <option value="1">1</option> <option value="2">2</option> <option value="3">3</option> <option value="4">4+</option>
+                        {% endfor %}
+                    </select>
+                    <small>Estimated number of vehicles.</small>
+                </div>
+            </div>
+
+            <div class="text-center submit-container">
+                <button type="submit" class="btn btn-primary btn-lg predict-btn">
+                    <i class="fas fa-cogs"></i> Predict Severity
+                </button>
+            </div>
+        </form>
+        <p id="voiceStatus" class="voice-status-indicator" aria-live="polite"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const predictorForm = document.getElementById('predictorForm');
+    const modal = document.getElementById('predictionModal');
+    const closeModalBtn = modal.querySelector('.close-modal-btn');
+    const modalOkButton = document.getElementById('modalOkButton');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    const modalIcon = document.getElementById('modalIcon');
+
+    // Show modal if prediction_result is available (passed from Flask)
+    const predictionResultJson = {{ prediction_result|tojson|safe }};
+    if (predictionResultJson) {
+        modalTitle.textContent = predictionResultJson.title || "Prediction Result";
+        modalMessage.textContent = predictionResultJson.text;
+        
+        modalIcon.className = 'fas'; // Reset classes
+        if (predictionResultJson.severity === 'high') {
+            modalIcon.classList.add('fa-exclamation-triangle', 'icon-high-risk');
+            modal.classList.add('high-risk');
+        } else if (predictionResultJson.severity === 'medium') {
+            modalIcon.classList.add('fa-exclamation-circle', 'icon-medium-risk');
+            modal.classList.add('medium-risk');
         } else {
-            const recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            recognition.lang = 'en-US';
-
-            // Predefined questions and answers for AI simulation
-            const qaDatabase = {
-                "what is khardung la": "Khardung La Pass, located in Ladakh, India, is one of the highest motorable passes in the world at an elevation of 5,359 meters (17,582 feet). It’s a popular route for travelers heading to Nubra Valley.",
-                "what are ghat roads": "Ghat roads are mountain passes or roads in India, often found in the Western Ghats or Himalayan regions. They are known for their steep inclines, sharp bends, and scenic views, but can be dangerous due to weather and road conditions.",
-                "how to drive safely on ghat roads": "To drive safely on ghat roads, maintain a low speed, use low gears on steep slopes, honk at blind curves, avoid overtaking on sharp bends, and ensure your vehicle is in good condition (brakes, tires, etc.).",
-                "what affects accident severity": "Accident severity on ghat roads is affected by factors like time of day, weather conditions (e.g., rain, fog), road conditions (e.g., wet, damaged), the number of vehicles involved, and driver behavior.",
-                "how does the predictor work": "The Safety Predictor uses a machine learning model trained on historical accident data. It takes inputs like Time, Location, Weather Condition, Road Condition, and Vehicles Involved to predict the accident severity (Low, Medium, High).",
-                "what is the best time to travel on ghat roads": "The best time to travel on ghat roads is during daylight hours, preferably in the morning, when visibility is high and traffic is lower. Avoid traveling at night or during heavy rain or fog."
-            };
-
-            // Handle all microphone buttons (for dropdowns and chat input)
-            document.querySelectorAll('.mic-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetId = button.getAttribute('data-target');
-                    const targetInput = document.getElementById(targetId);
-
-                    // Toggle listening state
-                    if (button.classList.contains('listening')) {
-                        recognition.stop();
-                        return;
-                    }
-
-                    button.classList.add('listening');
-                    recognition.start();
-
-                    recognition.onresult = (event) => {
-                        const transcript = event.results[0][0].transcript.trim().toLowerCase();
-                        console.log(`Recognized: ${transcript}`);
-
-                        if (targetId === 'chat-input') {
-                            targetInput.value = transcript;
-                        } else {
-                            // Handle dropdowns (location, weather, road)
-                            const options = Array.from(targetInput.options).map(opt => ({
-                                text: opt.text.toLowerCase(),
-                                value: opt.value
-                            }));
-
-                            // Find the closest matching option
-                            let bestMatch = null;
-                            let highestScore = 0;
-                            options.forEach(option => {
-                                const score = similarity(transcript, option.text);
-                                if (score > highestScore) {
-                                    highestScore = score;
-                                    bestMatch = option;
-                                }
-                            });
-
-                            if (bestMatch && highestScore > 0.5) {
-                                targetInput.value = bestMatch.value;
-                            } else {
-                                alert(`Could not match "${transcript}" to any option in ${targetId}. Please try again.`);
-                            }
-                        }
-                    };
-
-                    recognition.onend = () => {
-                        button.classList.remove('listening');
-                    };
-
-                    recognition.onerror = (event) => {
-                        console.error('Speech recognition error:', event.error);
-                        button.classList.remove('listening');
-                        if (event.error === 'no-speech') {
-                            alert('No speech detected. Please try again.');
-                        } else if (event.error === 'not-allowed') {
-                            alert('Microphone access denied. Please allow microphone permissions.');
-                        } else {
-                            alert('An error occurred during speech recognition: ' + event.error);
-                        }
-                    };
-                });
-            });
-
-            // Handle chat submission
-            document.getElementById('chat-send').addEventListener('click', () => {
-                const questionInput = document.getElementById('chat-input');
-                const question = questionInput.value.trim().toLowerCase();
-                const chatOutput = document.getElementById('chat-output');
-
-                if (!question) {
-                    alert('Please enter a question.');
-                    return;
-                }
-
-                // Find the closest matching question in the QA database
-                let bestMatch = null;
-                let highestScore = 0;
-                Object.keys(qaDatabase).forEach(q => {
-                    const score = similarity(question, q);
-                    if (score > highestScore) {
-                        highestScore = score;
-                        bestMatch = q;
-                    }
-                });
-
-                if (bestMatch && highestScore > 0.5) {
-                    chatOutput.textContent = qaDatabase[bestMatch];
-                } else {
-                    chatOutput.textContent = "Sorry, I couldn’t find an answer to your question. Try asking about ghat roads, safety, or the predictor tool (e.g., 'What is Khardung La?' or 'How does the predictor work?').";
-                }
-
-                // Clear the input field
-                questionInput.value = '';
-            });
-
-            // Allow pressing Enter to send the chat message
-            document.getElementById('chat-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    document.getElementById('chat-send').click();
-                }
-            });
-
-            // Simple string similarity function (Levenshtein distance approximation)
-            function similarity(s1, s2) {
-                s1 = s1.toLowerCase();
-                s2 = s2.toLowerCase();
-                if (s1 === s2) return 1.0;
-                if (s1.length < s2.length) [s1, s2] = [s2, s1];
-                if (s2.length === 0) return 0.0;
-
-                const previousRow = Array(s2.length + 1).fill(0).map((_, i) => i);
-                for (let i = 0; i < s1.length; i++) {
-                    const currentRow = [i + 1];
-                    for (let j = 0; j < s2.length; j++) {
-                        const insertions = previousRow[j + 1] + 1;
-                        const deletions = currentRow[j] + 1;
-                        const substitutions = previousRow[j] + (s1[i] !== s2[j] ? 1 : 0);
-                        currentRow.push(Math.min(insertions, deletions, substitutions));
-                    }
-                    previousRow.splice(0, previousRow.length, ...currentRow);
-                }
-                const distance = previousRow[s2.length];
-                return 1.0 - distance / Math.max(s1.length, s2.length);
-            }
+            modalIcon.classList.add('fa-check-circle', 'icon-low-risk');
+            modal.classList.add('low-risk');
         }
-    </script>
+        modal.style.display = 'flex';
+    }
+
+    closeModalBtn.onclick = function() {
+        modal.style.display = 'none';
+        modal.className = 'modal'; // Reset risk classes
+    }
+    modalOkButton.onclick = function() {
+        modal.style.display = 'none';
+        modal.className = 'modal'; // Reset risk classes
+    }
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+            modal.className = 'modal'; // Reset risk classes
+        }
+    }
+
+    // --- Web Speech API for Voice Input ---
+    const micButtons = document.querySelectorAll('.mic-btn');
+    const voiceStatus = document.getElementById('voiceStatus');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (SpeechRecognition) {
+        micButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const targetSelectId = this.dataset.targetSelect;
+                const targetSelect = document.getElementById(targetSelectId);
+                if (!targetSelect) return;
+
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                voiceStatus.textContent = `Listening for ${targetSelect.labels[0].textContent.replace(' (Est.)','')}...`;
+                voiceStatus.classList.add('active');
+                this.classList.add('listening');
+                
+                recognition.start();
+
+                recognition.onresult = function(event) {
+                    const speechResult = event.results[0][0].transcript.trim().toLowerCase();
+                    voiceStatus.textContent = `Heard: "${speechResult}". Processing...`;
+                    
+                    let matched = false;
+                    for (let option of targetSelect.options) {
+                        if (option.value && speechResult.includes(option.value.toLowerCase())) {
+                            targetSelect.value = option.value;
+                            matched = true;
+                            break;
+                        }
+                        // Try matching text content as well
+                        if (option.text && speechResult.includes(option.text.toLowerCase())) {
+                             targetSelect.value = option.value;
+                             matched = true;
+                             break;
+                        }
+                    }
+
+                    if (matched) {
+                        voiceStatus.textContent = `Set ${targetSelect.labels[0].textContent} to "${targetSelect.options[targetSelect.selectedIndex].text}".`;
+                    } else {
+                        voice_Status.textContent = `Could not match "${speechResult}" to an option for ${targetSelect.labels[0].textContent}. Please try again or select manually.`;
+                    }
+                };
+
+                recognition.onspeechend = function() {
+                    recognition.stop();
+                    button.classList.remove('listening');
+                    // Keep status message for a bit or clear it
+                    setTimeout(() => { voiceStatus.classList.remove('active'); voiceStatus.textContent = ''; }, 3000);
+                };
+
+                recognition.onerror = function(event) {
+                    voiceStatus.textContent = 'Error recognizing speech: ' + event.error + ". Please try again or select manually.";
+                    console.error('Speech recognition error:', event.error);
+                    button.classList.remove('listening');
+                     setTimeout(() => { voiceStatus.classList.remove('active'); voiceStatus.textContent = ''; }, 5000);
+                };
+            });
+        });
+    } else {
+        voiceStatus.textContent = 'Speech recognition not supported by your browser.';
+        micButtons.forEach(button => button.style.display = 'none'); // Hide mic buttons
+    }
+});
+</script>
 {% endblock %}

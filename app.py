@@ -1,266 +1,395 @@
-from flask import Flask, request, render_template, redirect, url_for, session, flash
+from flask import Flask, request, render_template, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import joblib
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import random
+import os
+import json # For Gemini API interaction
+import requests # For making HTTP requests to Gemini API
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key'  # Replace with a secure key in production
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'your-super-secret-key-fallback-v3')
 
 # Configure SQLite database
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users_v3.db' # New DB name to avoid conflicts
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Define User model
+# --- Database Model (no changes needed from previous version) ---
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
 
     def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-# Create database tables
 with app.app_context():
     db.create_all()
-    # Add default admin user if not exists
     if not User.query.filter_by(username='admin').first():
-        admin = User(username='admin')
-        admin.set_password('password123')
-        db.session.add(admin)
-        db.session.commit()
+        admin_email = 'admin@example.com'
+        if not User.query.filter_by(email=admin_email).first():
+            admin = User(username='admin', email=admin_email)
+            admin.set_password('password123')
+            db.session.add(admin)
+            db.session.commit()
 
-# Load the model and encoders
+# --- Load ML Model and Encoders ---
+MODEL_PATH = 'models/'
+model = None
+scaler = None
+le_location = None
+le_weather = None
+le_road = None
+
 try:
-    model = joblib.load('models/model.pkl')
-    scaler = joblib.load('models/scaler.pkl')
-    le_location = joblib.load('models/le_location.pkl')
-    le_weather = joblib.load('models/le_weather.pkl')
-    le_road = joblib.load('models/le_road.pkl')
-except FileNotFoundError:
-    print("Error: Model or encoder files not found.")
-    exit(1)
+    model = joblib.load(os.path.join(MODEL_PATH, 'model.pkl'))
+    scaler = joblib.load(os.path.join(MODEL_PATH, 'scaler.pkl'))
+    le_location = joblib.load(os.path.join(MODEL_PATH, 'le_location.pkl'))
+    le_weather = joblib.load(os.path.join(MODEL_PATH, 'le_weather.pkl'))
+    le_road = joblib.load(os.path.join(MODEL_PATH, 'le_road.pkl'))
+except FileNotFoundError as e:
+    print(f"CRITICAL ERROR: Model/encoder file not found: {e}. AscentAlert predictor will NOT function.")
+    print(f"Please ensure 'train_model.py' has been run successfully and all .pkl files are in '{MODEL_PATH}'.")
+    # To prevent app crash, but functionality will be impaired.
+    from sklearn.preprocessing import LabelEncoder
+    if not model: print("model.pkl is missing.")
+    if not scaler: print("scaler.pkl is missing.")
+    if not le_location: le_location = LabelEncoder(); print("le_location.pkl missing, using dummy.")
+    if not le_weather: le_weather = LabelEncoder(); print("le_weather.pkl missing, using dummy.")
+    if not le_road: le_road = LabelEncoder(); print("le_road.pkl missing, using dummy.")
 
-# Load dataset for homepage, dashboard, and dynamic slope/radius calculation
-try:
-    data = pd.read_csv('ghat_road_traffic_Indian_accidents.csv')
-except FileNotFoundError:
-    print("Error: Dataset file 'ghat_road_traffic_Indian_accidents.csv' not found.")
-    exit(1)
 
-# Function to shorten location names to the first word
-def shorten_location_name(location):
-    return location.split()[0].capitalize()
-
-# Create a mapping of full location names to shortened names
-location_mapping = {loc: shorten_location_name(loc) for loc in data['Location'].unique()}
-# Apply the mapping to the dataset
-data['Short_Location'] = data['Location'].map(location_mapping)
-
-# Get unique ghat roads (top 10 locations) with coordinates
-ghat_roads = data[['Location', 'Latitude', 'Longitude']].drop_duplicates().head(10).to_dict('records')
-descriptions = [
-    "A treacherous pass with steep inclines and hairpin bends, offering stunning Himalayan views.",
-    "Known for its narrow lanes and rocky terrain, a challenge for even seasoned drivers.",
-    "A scenic route through dense forests, prone to fog and slippery conditions.",
-    "Famous for its high altitude and unpredictable weather, demanding careful navigation.",
-    "A winding road with sharp curves, surrounded by lush greenery and waterfalls.",
-    "A remote stretch with loose gravel, requiring slow and steady driving.",
-    "A popular tourist route with heavy traffic and tight turns, especially during monsoons.",
-    "A rugged path through rocky cliffs, where visibility can drop suddenly.",
-    "A serene road with gentle slopes, but watch out for unexpected livestock crossings.",
-    "A steep descent with breathtaking vistas, but notorious for sudden rockslides."
+# --- Load Dataset for Dashboard and Predictor Options ---
+DATASET_PATH = 'ghat_road_traffic_Indian_accidents.csv'
+data = pd.DataFrame()
+locations_available = ["Unknown Location"]
+weather_conditions_available = ["Unknown Weather"]
+road_conditions_available = ["Unknown Road Condition"]
+vehicles_involved_options = ["1"]
+ghat_road_info_static = [ # Static data for home page, replace with actuals or load from CSV
+    {"id": 1, "name": "Khardung La Pass (Ladakh)", "latitude": 34.2787, "longitude": 77.6046, "description": "A treacherous pass with steep inclines and hairpin bends, offering stunning Himalayan views.", "image": "road1.jpg"},
+    {"id": 2, "name": "Gata Loops (Himachal Pradesh)", "latitude": 33.2068, "longitude": 78.2974, "description": "Known for its narrow lanes and rocky terrain, a challenge for even seasoned drivers.", "image": "road2.jpg"},
+    {"id": 3, "name": "Rohtang Pass (Himachal Pradesh)", "latitude": 32.3643, "longitude": 77.2422, "description": "A scenic route through dense forests, prone to fog and slippery conditions.", "image": "road3.jpg"},
+    {"id": 4, "name": "Kinnaur Road (Himachal Pradesh)", "latitude": 31.5267, "longitude": 76.9629, "description": "Famous for its high altitude and unpredictable weather, demanding careful navigation.", "image": "road4.jpg"},
+    {"id": 5, "name": "Nathula Pass Road (Sikkim)", "latitude": 27.3869, "longitude": 88.8309, "description": "A winding road with sharp curves, surrounded by lush greenery and waterfalls.", "image": "road5.jpg"},
+    {"id": 6, "name": "Kallati Ghat Road (Tamil Nadu)", "latitude": 11.4637, "longitude": 76.7028, "description": "A remote stretch with loose gravel, requiring slow and steady driving.", "image": "road6.jpg"},
+    {"id": 7, "name": "Munnar Road (Kerala)", "latitude": 10.0889, "longitude": 77.0595, "description": "A popular tourist route with heavy traffic and tight turns, especially during monsoons.", "image": "road7.jpg"},
+    {"id": 8, "name": "Kolli Hills Road (Tamil Nadu)", "latitude": 11.2485, "longitude": 78.3386, "description": "A rugged path through rocky cliffs, where visibility can drop suddenly.", "image": "road8.jpg"},
+    {"id": 9, "name": "Zoji La Pass (Jammu & Kashmir)", "latitude": 34.2704, "longitude": 75.4657, "description": "A serene road with gentle slopes, but watch out for unexpected livestock crossings.", "image": "road9.jpg"},
+    {"id": 10, "name": "Valparai Ghat Road (Tamil Nadu)", "latitude": 10.3269, "longitude": 76.9541, "description": "A steep descent with breathtaking vistas, but notorious for sudden rockslides.", "image": "road10.jpg"}
 ]
-for i, road in enumerate(ghat_roads):
-    road['Description'] = descriptions[i]
-    road['Image'] = f'road{i+1}.jpg'
-    road['Short_Location'] = shorten_location_name(road['Location'])
 
-# Define possible values for dropdowns
-locations = le_location.classes_
-locations_shortened = {loc: shorten_location_name(loc) for loc in locations}
-weather_conditions = le_weather.classes_
-road_conditions = le_road.classes_
 
-def convert_time(time_str):
+try:
+    data = pd.read_csv(DATASET_PATH)
+    if not data.empty:
+        if le_location and hasattr(le_location, 'fit'):
+            le_location.fit(data['Location'].astype(str).unique())
+        if le_weather and hasattr(le_weather, 'fit'):
+            le_weather.fit(data['Weather Condition'].astype(str).unique())
+        if le_road and hasattr(le_road, 'fit'):
+            le_road.fit(data['Road Condition'].astype(str).unique())
+
+        locations_available = sorted(data['Location'].astype(str).unique())
+        weather_conditions_available = sorted(data['Weather Condition'].astype(str).unique())
+        road_conditions_available = sorted(data['Road Condition'].astype(str).unique())
+        vehicles_involved_options = sorted(data['Vehicles Involved'].astype(str).unique())
+    else:
+        print(f"Warning: Dataset file '{DATASET_PATH}' is empty.")
+except FileNotFoundError:
+    print(f"Error: Dataset file '{DATASET_PATH}' not found.")
+except Exception as e:
+    print(f"Error loading dataset '{DATASET_PATH}': {e}")
+
+
+# --- Helper Functions ---
+def convert_time_to_hour(time_str): # Changed from convert_time_to_features
     try:
-        if time_str is None or not isinstance(time_str, str):
-            return random.randint(0, 23)  # Random hour if invalid
-        time_obj = datetime.strptime(time_str, '%I:%M:%S %p')
-        return time_obj.hour + random.uniform(-2, 2) % 24  # Dynamic hour with small random offset
+        dt_obj = datetime.strptime(time_str, '%I:%M:%S %p') # Format from predictor.html
+        return dt_obj.hour
     except ValueError:
-        return random.randint(0, 23)  # Random hour if parsing fails
+        try: # Fallback for HH:MM from HTML time input
+            dt_obj = datetime.strptime(time_str, '%H:%M')
+            return dt_obj.hour
+        except ValueError:
+            return 0 # Default if parsing fails
 
-def validate_input(value, encoder_classes, default_value):
-    if value in encoder_classes:
-        return value
-    return default_value
 
-def calculate_dynamic_slope_radius(latitude, longitude):
-    # Simple dynamic calculation based on latitude and longitude
-    base_slope = 5.0  # Base slope in degrees
-    base_radius = 30.0  # Base radius in meters
-    slope = base_slope + (abs(latitude) * 0.5) + (abs(longitude) * 0.3)  # Increase with latitude/longitude
-    radius = base_radius + (abs(longitude) * 10) - (abs(latitude) * 5)  # Vary with coordinates
-    return max(5, min(slope, 20)), max(20, min(radius, 100))  # Constrain within realistic ranges
+# --- Gemini API Configuration ---
+# IMPORTANT: In a real application, DO NOT hardcode API keys. Use environment variables.
+# For Canvas environment, the API key is injected if left as empty string for specific models.
+GEMINI_API_KEY = "AIzaSyBwnF1gvVclP4BLWGxLOa04bcAYzQkklm0" # For gemini-2.0-flash, this can be empty in Canvas
+GEMINI_API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+
+
+# --- Routes ---
+@app.route('/loading')
+def loading():
+    # The loading.html you provided has its own JS for redirection.
+    # This route just serves the page.
+    return render_template('loading.html', title="Initializing AscentAlert")
 
 @app.route('/')
-def loading():
-    return render_template('loading.html')
-
-@app.route('/index')
 def index():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    return render_template('index.html', ghat_roads=ghat_roads, logged_in=session.get('logged_in', False))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            session['logged_in'] = True
-            session['username'] = username
-            flash('Login successful!', 'success')
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid credentials. Please try again.', 'error')
-    return render_template('login.html')
+    # Logic for showing loading screen only once per session
+    if not session.get('loaded_once_v3'): # Use a new session variable
+        session['loaded_once_v3'] = True
+        return redirect(url_for('loading'))
+    return render_template('home.html', title="Home - AscentAlert",
+                           logged_in=session.get('logged_in', False),
+                           ghat_roads=ghat_road_info_static)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if session.get('logged_in'):
+        return redirect(url_for('index'))
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        # Basic validation
-        if len(username) < 3:
-            flash('Username must be at least 3 characters long.', 'error')
-            return render_template('register.html')
-        if len(password) < 6:
-            flash('Password must be at least 6 characters long.', 'error')
-            return render_template('register.html')
-        # Check if username already exists
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
         if User.query.filter_by(username=username).first():
-            flash('Username already exists. Please choose a different one.', 'error')
-            return render_template('register.html')
-        # Create new user
-        new_user = User(username=username)
+            flash('Username already exists.', 'error')
+            return redirect(url_for('register'))
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered.', 'error')
+            return redirect(url_for('register'))
+        new_user = User(username=username, email=email)
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
-        flash('Registration successful! Please log in.', 'success')
+        flash('Registration successful! Please login.', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html')
+    return render_template('register.html', title="Register - AscentAlert")
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if session.get('logged_in'):
+        return redirect(url_for('index'))
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            session['logged_in'] = True
+            session['username'] = user.username
+            session['user_id'] = user.id
+            flash(f'Welcome back, {user.username}!', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password.', 'error')
+    return render_template('login.html', title="Login - AscentAlert")
 
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     session.pop('username', None)
-    flash('You have been logged out.', 'success')
+    session.pop('user_id', None)
+    session.pop('loaded_once_v3', None) # Reset loading screen flag
+    flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-@app.route('/predictor', methods=['GET'])
+@app.route('/predictor', methods=['GET', 'POST'])
 def predictor():
     if not session.get('logged_in'):
+        flash('Please login to use the predictor.', 'warning')
         return redirect(url_for('login'))
-    return render_template('predictor.html',
-                         locations=locations,
-                         locations_shortened=locations_shortened,
-                         weather_conditions=weather_conditions,
-                         road_conditions=road_conditions,
-                         logged_in=session.get('logged_in', False))
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    if not session.get('logged_in'):
-        return redirect(url_for('login'))
-    try:
-        time = request.form.get('time')
-        location = request.form.get('location')
-        weather = request.form.get('weather')
-        road = request.form.get('road')
-        vehicles = int(request.form.get('vehicles', 1))  # Default to 1 if not provided
+    prediction_result = None # Will be a dict: {'text': "...", 'severity': "low/medium/high"}
+    if request.method == 'POST':
+        if not model or not scaler or not le_location or not le_weather or not le_road:
+            flash("Prediction service is critically unavailable. Model or encoders not loaded.", "error")
+            # Return with current form data if possible, or just the empty form
+            return render_template('predictor.html', title="Safety Predictor", logged_in=session.get('logged_in', False),
+                                   locations=locations_available, weather_conditions=weather_conditions_available,
+                                   road_conditions=road_conditions_available, vehicles_options=vehicles_involved_options,
+                                   prediction_result=None) # Explicitly None
+        try:
+            time_input = request.form['time'] # This is now HH:MM from <input type="time">
+            location_form = request.form['location']
+            road_condition_form = request.form['road_condition']
+            weather_condition_form = request.form['weather_condition']
+            vehicles_involved = int(request.form['vehicles_involved'])
 
-        hour = convert_time(time)
-        # Validate inputs against encoder classes, default to first class if invalid
-        location = validate_input(location, locations, locations[0])
-        weather = validate_input(weather, weather_conditions, weather_conditions[0])
-        road = validate_input(road, road_conditions, road_conditions[0])
+            hour = convert_time_to_hour(time_input)
 
-        location_encoded = le_location.transform([location])[0]
-        weather_encoded = le_weather.transform([weather])[0]
-        road_encoded = le_road.transform([road])[0]
+            # Transform categorical features
+            location_encoded = le_location.transform([str(location_form)])[0]
+            weather_encoded = le_weather.transform([str(weather_condition_form)])[0]
+            road_encoded = le_road.transform([str(road_condition_form)])[0]
 
-        # Introduce variability to avoid consistent "High" prediction
-        if random.random() < 0.7:  # 70% chance to adjust vehicles for diversity
-            vehicles = max(1, min(5, vehicles + random.randint(-1, 1)))  # Random adjustment within 1-5
+            slope_value = data['Slope'].mean() if 'Slope' in data.columns and not data.empty else 0.1
+            radius_value = data['Radius'].mean() if 'Radius' in data.columns and not data.empty else 100.0
+            if not data.empty and 'Location' in data.columns and 'Slope' in data.columns and 'Radius' in data.columns:
+                location_data_df = data[data['Location'] == location_form] # Ensure using original string form
+                if not location_data_df.empty:
+                    slope_value = location_data_df['Slope'].iloc[0]
+                    radius_value = location_data_df['Radius'].iloc[0]
 
-        features = np.array([[hour, location_encoded, weather_encoded, road_encoded, vehicles]])
-        features_scaled = scaler.transform(features)
+            # Feature order as per train_model.py
+            feature_names = ['Location', 'Weather Condition', 'Road Condition', 'Hour', 'Vehicles Involved', 'Slope', 'Radius']
+            feature_values = [location_encoded, weather_encoded, road_encoded, hour, vehicles_involved, slope_value, radius_value]
+            input_features_df = pd.DataFrame([feature_values], columns=feature_names)
 
-        prediction = model.predict(features_scaled)[0]
-        severity = {0: 'Low (0-2 Casualties)', 1: 'Medium (3-6 Casualties)', 2: 'High (7+ Casualties)'}
-        result = severity[prediction]
+            scaled_features = scaler.transform(input_features_df)
+            prediction = model.predict(scaled_features)
+            predicted_casualties = int(prediction[0])
+            if predicted_casualties >= 0 and predicted_casualties <=2 :
+                severity = "low"
+                popup_title = "Low Risk"
+                popup_message = f"Predicted: Low Risk (Likely 0 Casualties)"
+            if predicted_casualties >= 3 and predicted_casualties <=6 :
+                severity = "medium"
+                popup_title = "Moderate Risk"
+                popup_message = f"Predicted: Moderate Risk (Potential for {predicted_casualties} Casualty)"
+            elif predicted_casualties >= 7:
+                severity = "high"
+                popup_title = "High Risk Alert!"
+                popup_message = f"Predicted: High Risk (Potential for {predicted_casualties} Casualties)"
 
-        # Find the location data for dynamic slope and radius
-        location_data = next((r for r in ghat_roads if r['Location'] == location), {'Latitude': 0, 'Longitude': 0})
-        slope, radius = calculate_dynamic_slope_radius(location_data['Latitude'], location_data['Longitude'])
+            prediction_result = {
+                "text": popup_message,
+                "severity": severity,
+                "title": popup_title,
+                "raw_casualties": predicted_casualties # For potential further use
+            }
+            # Flash message is now handled by the popup on the frontend
+            # flash(f"Prediction successful: {popup_message}", "success_prediction")
 
-        return render_template('result.html', prediction=result, slope=slope, radius=radius, logged_in=session.get('logged_in', False))
-    except Exception as e:
-        return render_template('result.html', prediction=f"Error: {str(e)}", logged_in=session.get('logged_in', False))
+        except ValueError as ve:
+             flash(f"Input Error: {str(ve)}. One of the selected values might not be recognized by the model.", "error")
+             print(f"Predictor ValueError: {ve}")
+        except Exception as e:
+            flash(f"Error during prediction: {str(e)}. Please check your inputs.", "error")
+            print(f"Predictor Exception: {e}")
+
+    return render_template('predictor.html', title="Safety Predictor - AscentAlert", logged_in=session.get('logged_in', False),
+                           locations=locations_available, weather_conditions=weather_conditions_available,
+                           road_conditions=road_conditions_available, vehicles_options=vehicles_involved_options,
+                           prediction_result=prediction_result) # Pass the whole dict
 
 @app.route('/dashboard')
 def dashboard():
     if not session.get('logged_in'):
+        flash('Please login to view the dashboard.', 'warning')
         return redirect(url_for('login'))
+    
+    if data.empty:
+        flash('Dashboard data is unavailable. Dataset could not be loaded.', 'error')
+        return render_template('dashboard.html', title="Dashboard - AscentAlert", logged_in=session.get('logged_in', False), charts_data={})
 
-    # Process data for charts
-    # 1. Casualties by Ghat Road Name (using shortened names)
-    casualties_by_location = data.groupby('Short_Location')['Casualties'].sum().to_dict()
+    charts_data = {}
+    try:
+        if 'Time' in data.columns and 'Hour' not in data.columns:
+             data['Hour'] = data['Time'].apply(lambda x: convert_time_to_hour(str(x)))
 
-    # 2. Accidents by Time of Day (unchanged)
-    data['Hour'] = data['Time'].apply(convert_time)
-    time_bins = pd.cut(data['Hour'], bins=[0, 6, 12, 18, 24], labels=['Night', 'Morning', 'Afternoon', 'Evening'], right=False)
-    time_accidents = time_bins.value_counts().to_dict()
-
-    # 3. Cause vs Road Condition vs Ghat Road Name (using shortened names)
-    # Simulate 'Cause' column if not present
-    if 'Cause' not in data.columns:
-        causes = ['Speeding', 'Overtaking', 'Weather', 'Mechanical Failure', 'Driver Error']
-        data['Cause'] = np.random.choice(causes, size=len(data))
-    cause_road_location = data.groupby(['Cause', 'Road Condition', 'Short_Location']).size().reset_index(name='Accident_Count').to_dict('records')
-    causes = sorted(data['Cause'].unique())
-    road_conditions = sorted(data['Road Condition'].unique())
-    short_locations = sorted(data['Short_Location'].unique())
-
-    # 4. Road Condition vs Weather vs Ghat Road (using shortened names)
-    road_weather_location = data.groupby(['Road Condition', 'Weather Condition', 'Short_Location']).size().reset_index(name='Accident_Count').to_dict('records')
-
-    return render_template('dashboard.html',
-                         casualties_by_location=casualties_by_location,
-                         time_accidents=time_accidents,
-                         cause_road_location=cause_road_location,
-                         causes=causes,
-                         road_conditions=road_conditions,
-                         short_locations=short_locations,
-                         road_weather_location=road_weather_location,
-                         logged_in=session.get('logged_in', False))
+        if 'Location' in data.columns and 'Casualties' in data.columns:
+            casualties_by_loc = data.groupby('Location')['Casualties'].sum().sort_values(ascending=False).reset_index()
+            charts_data['casualties_by_location'] = {"labels": casualties_by_loc['Location'].tolist(), "values": casualties_by_loc['Casualties'].tolist()}
+        if 'Hour' in data.columns:
+            accidents_by_hour = data['Hour'].value_counts().sort_index().reset_index(); accidents_by_hour.columns = ['Hour', 'Count']
+            charts_data['accidents_by_hour'] = {"labels": accidents_by_hour['Hour'].tolist(), "values": accidents_by_hour['Count'].tolist()}
+        if 'Weather Condition' in data.columns:
+            accidents_by_weather = data['Weather Condition'].value_counts().reset_index(); accidents_by_weather.columns = ['Weather', 'Count']
+            charts_data['accidents_by_weather'] = {"labels": accidents_by_weather['Weather'].tolist(), "values": accidents_by_weather['Count'].tolist()}
+        if 'Road Condition' in data.columns:
+            accidents_by_road = data['Road Condition'].value_counts().reset_index(); accidents_by_road.columns = ['RoadCondition', 'Count']
+            charts_data['accidents_by_road'] = {"labels": accidents_by_road['RoadCondition'].tolist(), "values": accidents_by_road['Count'].tolist()}
+        if 'Vehicles Involved' in data.columns and 'Casualties' in data.columns:
+            casualties_by_vehicles = data.groupby('Vehicles Involved')['Casualties'].sum().reset_index()
+            charts_data['casualties_by_vehicles'] = {"labels": casualties_by_vehicles['Vehicles Involved'].astype(str).tolist(), "values": casualties_by_vehicles['Casualties'].tolist()}
+    except Exception as e:
+        flash(f"Error generating dashboard data: {str(e)}", "error")
+        print(f"Dashboard error: {e}")
+    return render_template('dashboard.html', title="Dashboard - AscentAlert", logged_in=session.get('logged_in', False), charts_data=charts_data)
 
 @app.route('/about')
 def about():
+    team_members = [
+        {"name": "Alex Chen", "role": "Lead Developer & AI Specialist", "bio": "Alex is passionate about leveraging AI for social good, with a focus on safety and predictive analytics. He designed the core prediction engine for AscentAlert.", "image": "alex.jpg"},
+        {"name": "Maria Garcia", "role": "UX/UI Designer & Frontend Developer", "bio": "Maria crafted the user experience of AscentAlert, ensuring an intuitive and impactful interface. She believes in design that empowers users.", "image": "maria.jpg"},
+        {"name": "Samira Khan", "role": "Data Scientist & Backend Engineer", "bio": "Samira was instrumental in data analysis, model refinement, and building the robust backend infrastructure that powers AscentAlert.", "image": "samira.jpg"}
+    ]
+    return render_template('about.html', title="About Us - AscentAlert", logged_in=session.get('logged_in', False), team_members=team_members)
+
+@app.route('/ai_chat_interactive') # New route for the AI chat page
+def ai_chat_interactive():
     if not session.get('logged_in'):
+        flash('Please login to use the AI Chat.', 'warning')
         return redirect(url_for('login'))
-    return render_template('about.html', logged_in=session.get('logged_in', False))
+    return render_template('ai_chat.html', title="AI Safety Chat - AscentAlert", logged_in=session.get('logged_in', False))
+
+
+@app.route('/ask_gemini', methods=['POST'])
+def ask_gemini():
+    if not session.get('logged_in'):
+        return jsonify({"error": "User not logged in"}), 401
+
+    user_prompt = request.json.get('prompt')
+    if not user_prompt:
+        return jsonify({"error": "No prompt provided"}), 400
+
+    # Constructing the payload for Gemini API
+    # Prepend a context to guide the AI for safety-related queries
+    contextual_prompt = (
+        "You are a helpful AI assistant for 'AscentAlert', a ghat road safety prediction application. "
+        "Provide concise and relevant information related to road safety, ghat road conditions, "
+        "safe driving practices, or interpreting potential accident risks. "
+        "If the query is unrelated to these topics, politely state that you are specialized in road safety. "
+        "User query: " + user_prompt
+    )
+
+    payload = {
+        "contents": [{
+            "parts": [{"text": contextual_prompt}]
+        }]
+    }
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    try:
+        response = requests.post(GEMINI_API_URL, headers=headers, json=payload, timeout=20) # Added timeout
+        response.raise_for_status()  # Raises an HTTPError for bad responses (4XX or 5XX)
+        result = response.json()
+
+        if (result.get('candidates') and
+                result['candidates'][0].get('content') and
+                result['candidates'][0]['content'].get('parts') and
+                result['candidates'][0]['content']['parts'][0].get('text')):
+            ai_response = result['candidates'][0]['content']['parts'][0]['text']
+            return jsonify({"response": ai_response})
+        else:
+            # Log the unexpected response for debugging
+            print(f"Unexpected Gemini API response structure: {result}")
+            # Check for promptFeedback if candidates are missing
+            if result.get('promptFeedback') and result['promptFeedback'].get('blockReason'):
+                reason = result['promptFeedback']['blockReason']
+                error_message = f"AI response blocked due to: {reason}. Please rephrase your query."
+                return jsonify({"error": error_message}), 503 # Service Unavailable or custom code
+            return jsonify({"error": "AI could not generate a response or response format was unexpected."}), 500
+
+    except requests.exceptions.HTTPError as http_err:
+        print(f"Gemini API HTTP error: {http_err} - Response: {response.text}")
+        return jsonify({"error": f"AI service error: {http_err}"}), response.status_code
+    except requests.exceptions.RequestException as req_err: # Catches network errors, timeout, etc.
+        print(f"Gemini API Request error: {req_err}")
+        return jsonify({"error": f"Could not connect to AI service: {req_err}"}), 503
+    except Exception as e:
+        print(f"Error processing Gemini request: {e}")
+        return jsonify({"error": "An unexpected error occurred while contacting the AI service."}), 500
+
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    os.makedirs(MODEL_PATH, exist_ok=True)
+    os.makedirs('static/videos', exist_ok=True)
+    os.makedirs('static/images', exist_ok=True)
+    os.makedirs('static/images/team', exist_ok=True)
+    os.makedirs('static/images/ghat_roads', exist_ok=True) # For ghat road images
+    app.run(debug=True, port=5001)

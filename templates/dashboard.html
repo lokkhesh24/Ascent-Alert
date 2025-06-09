@@ -1,204 +1,239 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="dashboard-container">
-    <h2>Accident Analysis Dashboard</h2>
-    <div class="chart">
-        <h3>Casualties by Ghat Road</h3>
-        <canvas id="casualtiesLocationChart" class="small-chart" width="800" height="400"></canvas>
-    </div>
-    <div class="chart">
-        <h3>Accidents by Time of Day</h3>
-        <canvas id="timeChart" class="small-chart" width="800" height="400"></canvas>
-    </div>
-    <div class="chart">
-        <h3>Cause vs Road Condition vs Ghat Road (Multiple Bar)</h3>
-        <canvas id="causeRoadLocationChart" class="small-chart" width="800" height="400"></canvas>
-    </div>
-    <div class="chart">
-        <h3>Road Condition vs Weather vs Ghat Road (Multiple Bar)</h3>
-        <canvas id="roadWeatherLocationChart" class="small-chart" width="800" height="400"></canvas>
-    </div>
-    <div class="pdf-button-container">
-        <button onclick="exportPDF()" class="button dark-red">Export to PDF</button>
+<div class="page-container dashboard-page section-padding">
+    <div class="container">
+        <div class="dashboard-header text-center">
+            <h1 class="section-title dynamic-heading">Accident Data <span class="highlight">Dashboard</span></h1>
+            <p class="section-intro">Visualizing trends and insights from ghat road accident data.</p>
+        </div>
+
+        {% if not charts_data %}
+            <div class="alert alert-warning text-center">
+                <p><i class="fas fa-exclamation-triangle"></i> Dashboard data is currently unavailable or could not be loaded. Please try again later or check data source.</p>
+            </div>
+        {% else %}
+            <div class="dashboard-grid">
+                <!-- Casualties by Location -->
+                <div class="chart-card flexible-card">
+                    <h3 class="chart-title"><i class="fas fa-map-marked-alt"></i> Casualties by Location</h3>
+                    <canvas id="casualtiesByLocationChart"></canvas>
+                </div>
+
+                <!-- Accidents by Hour -->
+                <div class="chart-card flexible-card">
+                    <h3 class="chart-title"><i class="fas fa-hourglass-half"></i> Accidents by Hour of Day</h3>
+                    <canvas id="accidentsByHourChart"></canvas>
+                </div>
+
+                <!-- Accidents by Weather -->
+                <div class="chart-card flexible-card">
+                    <h3 class="chart-title"><i class="fas fa-cloud-showers-heavy"></i> Accidents by Weather</h3>
+                    <canvas id="accidentsByWeatherChart"></canvas>
+                </div>
+                
+                <!-- Accidents by Road Condition -->
+                <div class="chart-card flexible-card">
+                    <h3 class="chart-title"><i class="fas fa-road-barrier"></i> Accidents by Road Condition</h3>
+                    <canvas id="accidentsByRoadChart"></canvas>
+                </div>
+
+                <!-- Casualties by Vehicles Involved -->
+                <div class="chart-card flexible-card">
+                    <h3 class="chart-title"><i class="fas fa-car-crash"></i> Casualties by Vehicles Involved</h3>
+                    <canvas id="casualtiesByVehiclesChart"></canvas>
+                </div>
+            </div>
+        {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block scripts_extra %}
+{% if charts_data %}
 <script>
-// Bar Graph: Casualties by Ghat Road
-const casualtiesLocationCtx = document.getElementById('casualtiesLocationChart').getContext('2d');
-new Chart(casualtiesLocationCtx, {
-    type: 'bar',
-    data: {
-        labels: Object.keys({{ casualties_by_location | tojson }}),
-        datasets: [{
-            label: 'Casualties',
-            data: Object.values({{ casualties_by_location | tojson }}),
-            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FFC107', '#9C27B0', '#FF9800', '#673AB7', '#FF5722', '#607D8B', '#E91E63']
-        }]
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Number of Casualties'
-                }
-            },
-            x: {
-                title: {
-                    display: true,
-                    text: 'Ghat Road'
-                }
-            }
-        }
-    }
-});
+document.addEventListener('DOMContentLoaded', function () {
+    const chartColors = {
+        primary: 'var(--primary-color)', // Ferrari Red
+        accent: 'var(--accent-color)',   // Ferrari Yellow
+        textPrimary: 'var(--text-color-primary)',
+        gridLines: 'var(--border-color)',
+        background: 'var(--card-background-color)'
+    };
 
-// Pie Chart: Accidents by Time of Day
-const timeCtx = document.getElementById('timeChart').getContext('2d');
-new Chart(timeCtx, {
-    type: 'pie',
-    data: {
-        labels: Object.keys({{ time_accidents | tojson }}),
-        datasets: [{
-            data: Object.values({{ time_accidents | tojson }}),
-            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FFC107']
-        }]
-    }
-});
-
-// Multiple Bar Graph: Cause vs Road Condition vs Ghat Road
-const causeRoadLocationCtx = document.getElementById('causeRoadLocationChart').getContext('2d');
-const causeRoadLocationData = {{ cause_road_location | tojson }};
-const causes = {{ causes | tojson }};
-const roadConditions = {{ road_conditions | tojson }};
-const shortLocations = {{ short_locations | tojson }};
-const datasetsCauseRoadLocation = [];
-roadConditions.forEach((condition, index) => {
-    causes.forEach((cause, causeIndex) => {
-        datasetsCauseRoadLocation.push({
-            label: `${cause} (${condition})`,
-            data: shortLocations.map(location => {
-                const entry = causeRoadLocationData.find(item => item.Cause === cause && item['Road Condition'] === condition && item.Short_Location === location);
-                return entry ? entry.Accident_Count : 0;
-            }),
-            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FFC107', '#9C27B0'][index % 5],
-            borderColor: ['#388E3C', '#D32F2F', '#1976D2', '#FF9800', '#7B1FA2'][index % 5],
-            borderWidth: 1
-        });
-    });
-});
-new Chart(causeRoadLocationCtx, {
-    type: 'bar',
-    data: {
-        labels: shortLocations,
-        datasets: datasetsCauseRoadLocation
-    },
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Number of Accidents'
-                }
-            },
-            x: {
-                title: {
-                    display: true,
-                    text: 'Ghat Road'
-                }
-            }
-        },
+    const commonChartOptions = (titleText) => ({
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
-                position: 'top'
+                position: 'top',
+                labels: { color: chartColors.textPrimary, font: { family: 'Inter' } }
+            },
+            title: {
+                display: false, // Title is in card header
+                text: titleText,
+                color: chartColors.textPrimary,
+                font: { size: 16, family: 'Poppins', weight: '600' }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                titleFont: { family: 'Poppins', size: 14 },
+                bodyFont: { family: 'Inter', size: 12 },
             }
-        }
-    }
-});
-
-// Multiple Bar Chart: Road Condition vs Weather vs Ghat Road
-const roadWeatherLocationCtx = document.getElementById('roadWeatherLocationChart').getContext('2d');
-const roadWeatherLocationData = {{ road_weather_location | tojson }};
-const weatherConditions = [...new Set(roadWeatherLocationData.map(item => item['Weather Condition']))].sort();
-const datasetsRoadWeatherLocation = [];
-roadConditions.forEach((condition, index) => {
-    weatherConditions.forEach((weather, weatherIndex) => {
-        datasetsRoadWeatherLocation.push({
-            label: `${condition} (${weather})`,
-            data: shortLocations.map(location => {
-                const entry = roadWeatherLocationData.find(item => item['Road Condition'] === condition && item['Weather Condition'] === weather && item.Short_Location === location);
-                return entry ? entry.Accident_Count : 0;
-            }),
-            backgroundColor: ['#4CAF50', '#F44336', '#2196F3', '#FF9800'][index % 4],
-            borderColor: ['#388E3C', '#D32F2F', '#1976D2', '#F57C00'][index % 4],
-            borderWidth: 1
-        });
-    });
-});
-new Chart(roadWeatherLocationCtx, {
-    type: 'bar',
-    data: {
-        labels: shortLocations,
-        datasets: datasetsRoadWeatherLocation
-    },
-    options: {
+        },
         scales: {
             y: {
                 beginAtZero: true,
-                title: {
-                    display: true,
-                    text: 'Number of Accidents'
-                }
+                ticks: { color: chartColors.textPrimary, font: { family: 'Inter' } },
+                grid: { color: chartColors.gridLines, drawBorder: false }
             },
             x: {
-                title: {
-                    display: true,
-                    text: 'Ghat Road'
+                ticks: { color: chartColors.textPrimary, font: { family: 'Inter' } },
+                grid: { color: chartColors.gridLines, display: false }
+            }
+        }
+    });
+    
+    // Chart 1: Casualties by Location
+    const cblCtx = document.getElementById('casualtiesByLocationChart');
+    if (cblCtx && {{ charts_data.casualties_by_location|tojson|safe }}) {
+        const cblData = {{ charts_data.casualties_by_location|tojson|safe }};
+        new Chart(cblCtx, {
+            type: 'bar',
+            data: {
+                labels: cblData.labels,
+                datasets: [{
+                    label: 'Total Casualties',
+                    data: cblData.values,
+                    backgroundColor: chartColors.primary,
+                    borderColor: chartColors.primary,
+                    borderWidth: 1,
+                    borderRadius: 5,
+                }]
+            },
+            options: commonChartOptions('Casualties by Location')
+        });
+    }
+
+    // Chart 2: Accidents by Hour
+    const abhCtx = document.getElementById('accidentsByHourChart');
+    if (abhCtx && {{ charts_data.accidents_by_hour|tojson|safe }}) {
+        const abhData = {{ charts_data.accidents_by_hour|tojson|safe }};
+        new Chart(abhCtx, {
+            type: 'line',
+            data: {
+                labels: abhData.labels,
+                datasets: [{
+                    label: 'Number of Accidents',
+                    data: abhData.values,
+                    borderColor: chartColors.accent,
+                    backgroundColor: 'rgba(255, 213, 0, 0.2)', // Lighter yellow fill
+                    tension: 0.3,
+                    fill: true,
+                }]
+            },
+            options: commonChartOptions('Accidents by Hour of Day')
+        });
+    }
+
+    // Chart 3: Accidents by Weather
+    const abwCtx = document.getElementById('accidentsByWeatherChart');
+    if (abwCtx && {{ charts_data.accidents_by_weather|tojson|safe }}) {
+        const abwData = {{ charts_data.accidents_by_weather|tojson|safe }};
+        new Chart(abwCtx, {
+            type: 'pie', // Changed to pie for variety
+            data: {
+                labels: abwData.labels,
+                datasets: [{
+                    label: 'Accidents',
+                    data: abwData.values,
+                    backgroundColor: [
+                        'rgba(212, 0, 0, 0.8)',        // Ferrari Red
+                        'rgba(255, 213, 0, 0.8)',    // Ferrari Yellow
+                        'rgba(54, 162, 235, 0.8)',   // Blue
+                        'rgba(75, 192, 192, 0.8)',    // Green
+                        'rgba(153, 102, 255, 0.8)',  // Purple
+                        'rgba(255, 159, 64, 0.8)'    // Orange
+                    ],
+                    borderColor: chartColors.background, // Use card background for border to make slices distinct
+                    borderWidth: 2
+                }]
+            },
+            options: { // Pie charts have slightly different options
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: chartColors.textPrimary, font: { family: 'Inter' } } },
+                    title: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleFont: { family: 'Poppins', size: 14 },
+                        bodyFont: { family: 'Inter', size: 12 },
+                    }
                 }
             }
-        },
-        plugins: {
-            legend: {
-                position: 'top'
+        });
+    }
+
+    // Chart 4: Accidents by Road Condition
+    const abrCtx = document.getElementById('accidentsByRoadChart');
+    if (abrCtx && {{ charts_data.accidents_by_road|tojson|safe }}) {
+        const abrData = {{ charts_data.accidents_by_road|tojson|safe }};
+        new Chart(abrCtx, {
+            type: 'doughnut',
+            data: {
+                labels: abrData.labels,
+                datasets: [{
+                    label: 'Accidents',
+                    data: abrData.values,
+                     backgroundColor: [
+                        'rgba(212, 0, 0, 0.7)',        // Ferrari Red
+                        'rgba(255, 213, 0, 0.7)',    // Ferrari Yellow
+                        'rgba(26, 26, 26, 0.7)',      // Dark Grey / Nero
+                        'rgba(100, 100, 100, 0.7)',   // Medium Grey
+                        'rgba(204, 204, 204, 0.7)'    // Light Grey
+                    ],
+                    borderColor: chartColors.background,
+                    borderWidth: 2
+                }]
+            },
+             options: { 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: chartColors.textPrimary, font: { family: 'Inter' } } },
+                    title: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleFont: { family: 'Poppins', size: 14 },
+                        bodyFont: { family: 'Inter', size: 12 },
+                    }
+                }
             }
-        }
+        });
+    }
+
+    // Chart 5: Casualties by Vehicles Involved
+    const cbvCtx = document.getElementById('casualtiesByVehiclesChart');
+    if (cbvCtx && {{ charts_data.casualties_by_vehicles|tojson|safe }}) {
+        const cbvData = {{ charts_data.casualties_by_vehicles|tojson|safe }};
+        new Chart(cbvCtx, {
+            type: 'bar',
+            data: {
+                labels: cbvData.labels,
+                datasets: [{
+                    label: 'Total Casualties',
+                    data: cbvData.values,
+                    backgroundColor: chartColors.accent, // Use accent yellow
+                    borderColor: chartColors.accent,
+                    borderWidth: 1,
+                    borderRadius: 5,
+                }]
+            },
+            options: commonChartOptions('Casualties by Vehicles Involved')
+        });
     }
 });
-
-// PDF Export with html2canvas (Adjusted for Larger Charts)
-async function exportPDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-        compress: true
-    });
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(16);
-    doc.setTextColor(163, 0, 0);
-    doc.text("Ascent Alert Dashboard", 10, 10);
-
-    let yPos = 20;
-    const charts = ['casualtiesLocationChart', 'timeChart', 'causeRoadLocationChart', 'roadWeatherLocationChart'];
-    for (const chartId of charts) {
-        const canvas = document.getElementById(chartId);
-        const img = await html2canvas(canvas, { scale: 2 });
-        const imgData = img.toDataURL('image/png', 1.0);
-        // Adjust image size to fit A4 page (210mm width), maintaining aspect ratio
-        const imgWidth = 190; // Width in mm (slightly less than A4 width to account for margins)
-        const imgHeight = (imgWidth * canvas.height) / canvas.width; // Maintain aspect ratio
-        doc.addImage(imgData, 'PNG', 10, yPos, imgWidth, imgHeight);
-        yPos += imgHeight + 10;
-        if (yPos > 250) {
-            doc.addPage();
-            yPos = 20;
-        }
-    }
-
-    doc.save('dashboard.pdf');
-}
 </script>
+{% endif %}
 {% endblock %}
